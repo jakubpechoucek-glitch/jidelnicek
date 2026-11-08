@@ -350,12 +350,13 @@ const porceSlovo = (n) => n === 1 ? 'porce' : (n >= 2 && n <= 4 ? 'porce' : 'por
 // ── Ukázkový režim (?demo) ──
 const DEMO = new URLSearchParams(location.search).has('demo');
 async function demoData() {
-  const vychozi = await fetch('recepty-vychozi.json').then(r => r.json());
+  const [rodina, pomocna] = await Promise.all(['recepty-rodina.json', 'recepty-vychozi.json'].map(f => fetch(f).then(r => r.json())));
+  const vychozi = [...rodina, ...pomocna];
   let id = 1;
   const recepty = [], suroviny = [];
   for (const r of vychozi) {
     const rid = id++;
-    recepty.push({ id: rid, nazev: r.nazev, typ: r.typ, porce: r.porce, cas_min: r.cas_min, stitky: r.stitky, postup: r.postup, odkaz: '', aktivni: true, pridal: 'Ukázka' });
+    recepty.push({ id: rid, nazev: r.nazev, typ: r.typ, porce: r.porce, cas_min: r.cas_min, stitky: r.stitky, postup: r.postup, odkaz: r.odkaz || '', aktivni: true, pridal: 'Ukázka' });
     r.suroviny.forEach(([nazev, mnozstvi, jednotka, oddeleni], i) => suroviny.push({ id: id++, recept_id: rid, nazev, mnozstvi, jednotka, oddeleni, poradi: i }));
   }
   const rid = (n) => recepty.find(r => r.nazev.startsWith(n)).id;
@@ -370,24 +371,24 @@ async function demoData() {
   // tento týden (už rozhodnuto) – kvůli nákupu na zítra
   for (let i = 0; i < 7; i++) {
     const s = plus(pondeli(DNES), i);
-    const n = ['Kuřecí adobo', 'Vajíčková', 'Špagety', 'Polévka z mražáku', 'Tacos', 'Svíčková', 'Pečené kuře'][i];
+    const n = ['Kuřecí kung pao', 'Vajíčková', 'Boloňské', 'Polévka z mražáku', 'Oyakodon', 'Kuře na paprice', 'Holandský řízek'][i];
     k(s, n, 'Jana', ['Jana', 4], ['Jakub', 4], ['Lukáš', 5]);
   }
-  k(plus(DNES, 1), 'Losos', 'Jakub', ['Jana', 3]);
+  k(plus(DNES, 1), 'Losos se zeleninou', 'Jakub', ['Jana', 3]);
   // příští týden – hlasuje se
-  k(d(0), 'Kuřecí kari', 'Jana', ['Jana', 5], ['Lukáš', 4]);
-  k(d(0), 'Čočková polévka', 'Jakub', ['Jakub', 4], ['Jana', 3]);
+  k(d(0), 'Thajské kari (Kristína', 'Jana', ['Jana', 5], ['Lukáš', 4]);
+  k(d(0), 'Čočkový dhal', 'Jakub', ['Jakub', 4], ['Jana', 3]);
   k(d(0), 'Toasty', 'Lukáš', ['Lukáš', 5]);
   k(d(1), 'Tuňáková', 'Jakub', ['Jakub', 4]);
   k(d(1), 'Guláš z mražáku', 'Jana', ['Jana', 4], ['Lukáš', 4]);
-  k(d(2), 'Krevety', 'Lukáš', ['Lukáš', 5], ['Jakub', 5]);
-  k(d(2), 'Zeleninové rizoto', 'Jana', ['Jana', 5], ['Jakub', 2]);
-  k(d(2), 'Řecký salát', 'Jana');
-  k(d(3), 'Smažený řízek', 'Lukáš', ['Lukáš', 5]);
+  k(d(2), 'Kuřecí stir fry', 'Lukáš', ['Lukáš', 5], ['Jakub', 5]);
+  k(d(2), 'Směs s tempehem', 'Jana', ['Jana', 5], ['Jakub', 2]);
+  k(d(2), 'Salát z avokáda', 'Jana');
+  k(d(3), 'Butter chicken', 'Lukáš', ['Lukáš', 5]);
   k(d(3), 'Mražená pizza', 'Lukáš');
-  k(d(5), 'Sinigang', 'Jana', ['Jana', 5], ['Jakub', 4]);
-  k(d(5), 'Svíčková', 'Jakub', ['Jakub', 5], ['Lukáš', 3]);
-  k(d(6), 'Pečené kuře', 'Jana');
+  k(d(5), 'Špagety carbonara', 'Jana', ['Jana', 5], ['Jakub', 4]);
+  k(d(5), 'Kuře na paprice', 'Jakub', ['Jakub', 5], ['Lukáš', 3]);
+  k(d(6), 'Zapečené hovězí ragú', 'Jana');
   const dnyR = [{ datum: d(4), objednavka: true, chod: null, porce: null, vybrany_kandidat_id: null, poznamka: 'Pátek – pizza zvenku' }];
   // Plánovač: Jana na služební cestě, Lukáš má ve středu volno ve škole
   const volno = [

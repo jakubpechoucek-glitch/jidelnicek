@@ -1,65 +1,197 @@
 [
-  {"nazev": "Kuřecí adobo s rýží", "typ": "vareni", "porce": 3, "cas_min": 60, "stitky": ["kuře"],
-   "postup": "Kuřecí stehna marinovat 30 min v sójové omáčce, octu, česneku a pepři. Opéct, zalít marinádou a vodou, přidat bobkový list a dusit 30 min. Podávat s rýží.",
-   "suroviny": [["kuřecí stehna", 800, "g", "maso"], ["sójová omáčka", 100, "ml", "koreni"], ["ocet", 80, "ml", "koreni"], ["česnek", 1, "hlavička", "zelenina"], ["bobkový list", 3, "ks", "koreni"], ["rýže", 300, "g", "trvanlive"]]},
-  {"nazev": "Svíčková na smetaně", "typ": "vareni", "porce": 3, "cas_min": 150, "stitky": ["hovězí", "česká"],
-   "postup": "Maso prošpikovat, opéct, přidat kořenovou zeleninu a cibuli, podlít a dusit do měkka. Zeleninu rozmixovat, přidat smetanu, dochutit citronem a cukrem. Podávat s knedlíkem a brusinkami.",
-   "suroviny": [["hovězí zadní", 700, "g", "maso"], ["mrkev", 2, "ks", "zelenina"], ["celer", 0.5, "ks", "zelenina"], ["petržel kořen", 1, "ks", "zelenina"], ["cibule", 1, "ks", "zelenina"], ["smetana na vaření", 250, "ml", "mlecne"], ["citron", 1, "ks", "zelenina"], ["houskový knedlík", 1, "balení", "pecivo"], ["brusinky", 1, "sklenice", "trvanlive"]]},
-  {"nazev": "Špagety bolognese", "typ": "vareni", "porce": 3, "cas_min": 45, "stitky": ["hovězí", "těstoviny"],
-   "postup": "Na oleji osmahnout cibuli, mrkev a česnek, přidat mleté maso, opéct. Přidat rajčata, oregano, dusit 25 min. Podávat se špagetami a parmazánem.",
-   "suroviny": [["mleté hovězí", 500, "g", "maso"], ["cibule", 1, "ks", "zelenina"], ["mrkev", 1, "ks", "zelenina"], ["česnek", 3, "stroužek", "zelenina"], ["krájená rajčata", 2, "plechovka", "trvanlive"], ["špagety", 400, "g", "trvanlive"], ["parmazán", 60, "g", "mlecne"]]},
-  {"nazev": "Losos s pečenými bramborami", "typ": "vareni", "porce": 3, "cas_min": 40, "stitky": ["ryba"],
-   "postup": "Brambory nakrájet, promíchat s olejem, solí a rozmarýnem, péct 25 min na 200 °C. Přidat lososa s citronem, péct dalších 12 min. Podávat se salátem.",
-   "suroviny": [["filet z lososa", 500, "g", "maso"], ["brambory", 800, "g", "zelenina"], ["citron", 1, "ks", "zelenina"], ["rozmarýn", 1, "svazek", "zelenina"], ["salát", 1, "ks", "zelenina"]]},
-  {"nazev": "Kuřecí kari s kokosovým mlékem", "typ": "vareni", "porce": 3, "cas_min": 40, "stitky": ["kuře", "asijská"],
-   "postup": "Osmahnout cibuli, zázvor a česnek, přidat kari pastu a kuřecí kousky. Zalít kokosovým mlékem, přidat papriku a vařit 15 min. Podávat s rýží.",
-   "suroviny": [["kuřecí prsa", 600, "g", "maso"], ["kokosové mléko", 400, "ml", "trvanlive"], ["kari pasta", 2, "lžíce", "koreni"], ["paprika", 1, "ks", "zelenina"], ["cibule", 1, "ks", "zelenina"], ["zázvor", 1, "kus", "zelenina"], ["rýže", 300, "g", "trvanlive"]]},
-  {"nazev": "Smažený řízek s bramborovým salátem", "typ": "vareni", "porce": 3, "cas_min": 70, "stitky": ["vepřové", "česká"],
-   "postup": "Brambory uvařit ve slupce, oloupat, nakrájet, smíchat s cibulí, okurkou, mrkví a majonézou. Řízky naklepat, obalit v mouce, vejci a strouhance, usmažit.",
-   "suroviny": [["vepřová kotleta bez kosti", 600, "g", "maso"], ["vejce", 3, "ks", "mlecne"], ["strouhanka", 150, "g", "pecivo"], ["brambory", 800, "g", "zelenina"], ["kyselé okurky", 1, "sklenice", "trvanlive"], ["majonéza", 150, "g", "mlecne"], ["mrkev", 1, "ks", "zelenina"]]},
-  {"nazev": "Sinigang na baboy", "typ": "vareni", "porce": 3, "cas_min": 75, "stitky": ["vepřové", "polévka", "asijská"],
-   "postup": "Vepřové žebírko vařit s cibulí a rajčaty do měkka. Přidat tamarindový základ, ředkev, fazolky a kangkong. Dochutit rybí omáčkou.",
-   "suroviny": [["vepřová žebírka", 700, "g", "maso"], ["sinigang mix (tamarind)", 1, "sáček", "koreni"], ["rajčata", 2, "ks", "zelenina"], ["cibule", 1, "ks", "zelenina"], ["ředkev daikon", 1, "ks", "zelenina"], ["dlouhé fazolky", 1, "svazek", "zelenina"], ["kangkong", 1, "svazek", "zelenina"], ["rýže", 300, "g", "trvanlive"]]},
-  {"nazev": "Zeleninové rizoto", "typ": "vareni", "porce": 3, "cas_min": 40, "stitky": ["vege"],
-   "postup": "Osmahnout cibuli, přidat rýži arborio, postupně zalévat vývarem. Přidat cuketu, hrášek a na konci máslo a parmazán.",
-   "suroviny": [["rýže arborio", 300, "g", "trvanlive"], ["cuketa", 1, "ks", "zelenina"], ["hrášek mražený", 200, "g", "mrazene"], ["cibule", 1, "ks", "zelenina"], ["zeleninový bujón", 1, "ks", "koreni"], ["parmazán", 60, "g", "mlecne"], ["máslo", 30, "g", "mlecne"]]},
-  {"nazev": "Tacos s mletým masem", "typ": "vareni", "porce": 3, "cas_min": 30, "stitky": ["hovězí"],
-   "postup": "Mleté maso opéct s kořením na tacos. Tortilly ohřát, plnit masem, salátem, rajčaty, sýrem a zakysanou smetanou.",
-   "suroviny": [["mleté hovězí", 500, "g", "maso"], ["tortilly", 1, "balení", "pecivo"], ["koření na tacos", 1, "sáček", "koreni"], ["rajčata", 2, "ks", "zelenina"], ["salát", 1, "ks", "zelenina"], ["čedar", 150, "g", "mlecne"], ["zakysaná smetana", 200, "g", "mlecne"]]},
-  {"nazev": "Krevety s česnekem a nudlemi", "typ": "vareni", "porce": 3, "cas_min": 25, "stitky": ["ryba", "asijská"],
-   "postup": "Nudle uvařit. Na woku osmahnout česnek a chilli, přidat krevety, pak nudle, sójovou omáčku a pak choi.",
-   "suroviny": [["krevety", 500, "g", "maso"], ["vaječné nudle", 300, "g", "trvanlive"], ["česnek", 5, "stroužek", "zelenina"], ["pak choi", 2, "ks", "zelenina"], ["chilli", 1, "ks", "zelenina"], ["sójová omáčka", 3, "lžíce", "koreni"]]},
-  {"nazev": "Čočková polévka", "typ": "vareni", "porce": 3, "cas_min": 45, "stitky": ["vege", "polévka"],
-   "postup": "Osmahnout cibuli, mrkev a česnek, přidat červenou čočku, rajčata a vývar. Vařit 20 min, rozmixovat, dochutit kmínem a citronem. Uvařit dvojitou porci, půlka do mražáku.",
-   "suroviny": [["červená čočka", 250, "g", "trvanlive"], ["mrkev", 2, "ks", "zelenina"], ["cibule", 1, "ks", "zelenina"], ["krájená rajčata", 1, "plechovka", "trvanlive"], ["zeleninový bujón", 1, "ks", "koreni"], ["citron", 1, "ks", "zelenina"], ["pečivo", 3, "ks", "pecivo"]]},
-  {"nazev": "Pečené kuře s rýží a zeleninou", "typ": "vareni", "porce": 3, "cas_min": 90, "stitky": ["kuře", "česká"],
-   "postup": "Kuře osolit, potřít máslem s kmínem a péct 75 min na 190 °C. Spolu péct mrkev a cibuli. Podávat s rýží.",
-   "suroviny": [["celé kuře", 1, "ks", "maso"], ["mrkev", 3, "ks", "zelenina"], ["cibule", 2, "ks", "zelenina"], ["máslo", 50, "g", "mlecne"], ["rýže", 300, "g", "trvanlive"]]},
-
-  {"nazev": "Vajíčková pomazánka s chlebem", "typ": "rychlovka", "porce": 3, "cas_min": 15, "stitky": ["vege", "studené"],
-   "postup": "Vejce uvařit natvrdo, nastrouhat, smíchat s majonézou, hořčicí, pažitkou. Podávat na chlebu se zeleninou.",
-   "suroviny": [["vejce", 6, "ks", "mlecne"], ["majonéza", 100, "g", "mlecne"], ["hořčice", 1, "lžíce", "koreni"], ["pažitka", 1, "svazek", "zelenina"], ["chléb", 1, "ks", "pecivo"], ["okurka salátová", 1, "ks", "zelenina"]]},
-  {"nazev": "Tuňáková pomazánka", "typ": "rychlovka", "porce": 3, "cas_min": 10, "stitky": ["ryba", "studené"],
-   "postup": "Tuňáka smíchat s lučinou, cibulkou a citronem. Na chléb nebo bagety s rajčaty.",
-   "suroviny": [["tuňák v konzervě", 2, "plechovka", "trvanlive"], ["krémový sýr", 200, "g", "mlecne"], ["jarní cibulka", 1, "svazek", "zelenina"], ["bageta", 2, "ks", "pecivo"], ["rajčata", 3, "ks", "zelenina"]]},
-  {"nazev": "Toasty se šunkou a sýrem", "typ": "rychlovka", "porce": 3, "cas_min": 15, "stitky": ["studené"],
-   "postup": "Toastový chléb se šunkou a sýrem zapéct v toastovači, přidat zeleninu.",
-   "suroviny": [["toastový chléb", 1, "balení", "pecivo"], ["šunka", 200, "g", "maso"], ["sýr eidam plátky", 200, "g", "mlecne"], ["rajčata", 2, "ks", "zelenina"]]},
-  {"nazev": "Řecký salát s pitou", "typ": "rychlovka", "porce": 3, "cas_min": 15, "stitky": ["vege", "studené"],
-   "postup": "Nakrájet okurku, rajčata, papriku a cibuli, přidat olivy a fetu, zakápnout olejem. Podávat s ohřátou pitou.",
-   "suroviny": [["okurka salátová", 1, "ks", "zelenina"], ["rajčata", 3, "ks", "zelenina"], ["paprika", 1, "ks", "zelenina"], ["červená cibule", 1, "ks", "zelenina"], ["olivy", 1, "sklenice", "trvanlive"], ["feta", 200, "g", "mlecne"], ["pita", 1, "balení", "pecivo"]]},
-
-  {"nazev": "Guláš z mražáku", "typ": "mrazak", "porce": 3, "cas_min": 20, "stitky": ["hovězí"],
-   "postup": "Den předem přendat z mražáku do lednice, ohřát. Chleba koupit čerstvý.",
-   "suroviny": [["chléb", 1, "ks", "pecivo"]]},
-  {"nazev": "Polévka z mražáku", "typ": "mrazak", "porce": 3, "cas_min": 15, "stitky": ["polévka"],
-   "postup": "Ráno vyndat z mražáku, večer ohřát.",
-   "suroviny": []},
-  {"nazev": "Mražená pizza", "typ": "mrazak", "porce": 3, "cas_min": 20, "stitky": [],
-   "postup": "Péct podle návodu na obalu.",
-   "suroviny": [["mražená pizza", 2, "ks", "mrazene"]]},
-
-  {"nazev": "Objednáme (Grab / Foodpanda)", "typ": "objednavka", "porce": 3, "cas_min": 0, "stitky": [],
-   "postup": "Nevaří se, objedná se jídlo.",
-   "suroviny": []}
+ {
+  "nazev": "Tuňáková pomazánka",
+  "typ": "rychlovka",
+  "porce": 3,
+  "cas_min": 10,
+  "stitky": [
+   "ryba",
+   "studené"
+  ],
+  "postup": "Tuňáka smíchat s lučinou, cibulkou a citronem. Na chléb nebo bagety s rajčaty.",
+  "suroviny": [
+   [
+    "tuňák v konzervě",
+    2,
+    "plechovka",
+    "trvanlive"
+   ],
+   [
+    "krémový sýr",
+    200,
+    "g",
+    "mlecne"
+   ],
+   [
+    "jarní cibulka",
+    1,
+    "svazek",
+    "zelenina"
+   ],
+   [
+    "bageta",
+    2,
+    "ks",
+    "pecivo"
+   ],
+   [
+    "rajčata",
+    3,
+    "ks",
+    "zelenina"
+   ]
+  ],
+  "odkaz": ""
+ },
+ {
+  "nazev": "Toasty se šunkou a sýrem",
+  "typ": "rychlovka",
+  "porce": 3,
+  "cas_min": 15,
+  "stitky": [
+   "studené"
+  ],
+  "postup": "Toastový chléb se šunkou a sýrem zapéct v toastovači, přidat zeleninu.",
+  "suroviny": [
+   [
+    "toastový chléb",
+    1,
+    "balení",
+    "pecivo"
+   ],
+   [
+    "šunka",
+    200,
+    "g",
+    "maso"
+   ],
+   [
+    "sýr eidam plátky",
+    200,
+    "g",
+    "mlecne"
+   ],
+   [
+    "rajčata",
+    2,
+    "ks",
+    "zelenina"
+   ]
+  ],
+  "odkaz": ""
+ },
+ {
+  "nazev": "Řecký salát s pitou",
+  "typ": "rychlovka",
+  "porce": 3,
+  "cas_min": 15,
+  "stitky": [
+   "vege",
+   "studené"
+  ],
+  "postup": "Nakrájet okurku, rajčata, papriku a cibuli, přidat olivy a fetu, zakápnout olejem. Podávat s ohřátou pitou.",
+  "suroviny": [
+   [
+    "okurka salátová",
+    1,
+    "ks",
+    "zelenina"
+   ],
+   [
+    "rajčata",
+    3,
+    "ks",
+    "zelenina"
+   ],
+   [
+    "paprika",
+    1,
+    "ks",
+    "zelenina"
+   ],
+   [
+    "červená cibule",
+    1,
+    "ks",
+    "zelenina"
+   ],
+   [
+    "olivy",
+    1,
+    "sklenice",
+    "trvanlive"
+   ],
+   [
+    "feta",
+    200,
+    "g",
+    "mlecne"
+   ],
+   [
+    "pita",
+    1,
+    "balení",
+    "pecivo"
+   ]
+  ],
+  "odkaz": ""
+ },
+ {
+  "nazev": "Guláš z mražáku",
+  "typ": "mrazak",
+  "porce": 3,
+  "cas_min": 20,
+  "stitky": [
+   "hovězí"
+  ],
+  "postup": "Den předem přendat z mražáku do lednice, ohřát. Chleba koupit čerstvý.",
+  "suroviny": [
+   [
+    "chléb",
+    1,
+    "ks",
+    "pecivo"
+   ]
+  ],
+  "odkaz": ""
+ },
+ {
+  "nazev": "Polévka z mražáku",
+  "typ": "mrazak",
+  "porce": 3,
+  "cas_min": 15,
+  "stitky": [
+   "polévka"
+  ],
+  "postup": "Ráno vyndat z mražáku, večer ohřát.",
+  "suroviny": [],
+  "odkaz": ""
+ },
+ {
+  "nazev": "Mražená pizza",
+  "typ": "mrazak",
+  "porce": 3,
+  "cas_min": 20,
+  "stitky": [],
+  "postup": "Péct podle návodu na obalu.",
+  "suroviny": [
+   [
+    "mražená pizza",
+    2,
+    "ks",
+    "mrazene"
+   ]
+  ],
+  "odkaz": ""
+ },
+ {
+  "nazev": "Objednáme (Grab / Foodpanda)",
+  "typ": "objednavka",
+  "porce": 3,
+  "cas_min": 0,
+  "stitky": [],
+  "postup": "Nevaří se, objedná se jídlo.",
+  "suroviny": [],
+  "odkaz": ""
+ }
 ]

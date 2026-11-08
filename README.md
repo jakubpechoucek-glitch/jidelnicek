@@ -53,7 +53,7 @@ Suroviny jdou do existujícího receptu doplnit i tlačítkem **Vložit jako tex
 - Celá aplikace je v jediném souboru `index.html` (HTML + CSS + JS), bez buildu a bez závislostí kromě Supabase klienta z Rozcestníku.
 - Hostuje se na **GitHub Pages**: push do `main` se rovnou nasadí.
 - Poslední otevřená záložka se pamatuje v prohlížeči (`localStorage`, klíč `jidelnicek-view`).
-- `?demo` načte `recepty-vychozi.json` a smyšlený týden (Jana na služební cestě, Lukáš ve středu bez školy, v pátek objednávka). Nic se neukládá.
+- `?demo` načte `recepty-rodina.json` + `recepty-vychozi.json` a smyšlený týden (Jana na služební cestě, Lukáš ve středu bez školy, v pátek objednávka). Nic se neukládá.
 
 ### Přihlášení
 
@@ -62,7 +62,15 @@ Suroviny jdou do existujícího receptu doplnit i tlačítkem **Vložit jako tex
 
 ### Data (Supabase)
 
-Projekt Rozcestníku (`unoefgbzymlwwehgzusf`). Definice je v [`sql/01_tabulky.sql`](sql/01_tabulky.sql), výchozí recepty a „Mám doma“ v [`sql/02_vychozi_recepty.sql`](sql/02_vychozi_recepty.sql) (vygenerováno z `recepty-vychozi.json`).
+Projekt Rozcestníku (`unoefgbzymlwwehgzusf`). SQL se spouští v tomto pořadí:
+
+1. [`sql/01_tabulky.sql`](sql/01_tabulky.sql) – tabulky, triggery, RLS
+2. [`sql/02_vychozi_recepty.sql`](sql/02_vychozi_recepty.sql) – pomocná jídla (rychlovky, 🧊 z mražáku, 🛵 objednávka) a „Mám doma“, z `recepty-vychozi.json`
+3. [`sql/03_recepty_rodina.sql`](sql/03_recepty_rodina.sql) – 49 rodinných receptů ze Samsung Notes, z `recepty-rodina.json`
+
+Soubory 02 a 03 generuje `python3 scripts/generuj_sql.py <json> <sql> "<popis>"`. Recept, jehož název už v databázi je, se přeskočí, takže import jde spustit znovu.
+
+**Rodinné recepty** (`recepty-rodina.json`) vznikly 8. 11. 2026 z exportu Samsung Notes (`~/Documents/recepty/*.docx`, 50 poznámek, „Creamy salmon pasta“ byla dvakrát). Poznámky byly hlavně screenshoty a náhledy odkazů. Text se přečetl přes OCR v macOS (Vision) a odkazy se dohledaly na webu. 35 receptů má kompletní suroviny. U 14 se recept na webu dohledat nepodařilo (BBC, Kaufland, Tesco, YouTube, share.google…). Ty mají jen název, odkaz a štítek **„doplnit suroviny“**: v záložce Recepty je najde hledání „doplnit“. Suroviny jde doplnit v ✎ Upravit (případně Vložit jako text).
 
 | Tabulka | Obsah |
 |---|---|
