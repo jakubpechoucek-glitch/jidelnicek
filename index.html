@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="cs" class="auth-ceka">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jídelníček — rodinné vaření</title>
+  <!-- společné přihlášení rodiny (Rozcestník) -->
+  <script src="/rozcestnik/vendor/supabase-js-2.45.4.js"></script>
+  <script src="/rozcestnik/auth.js"></script>
+  <style>
+    .auth-ceka body { visibility: hidden; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f4f5f7;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --text: #111827;
+      --muted: #6b7280;
+      --green: #16a34a;
+      --green-bg: #dcfce7;
+      --orange: #ea580c;
+      --orange-bg: #ffedd5;
+      --blue: #2563eb;
+      --blue-bg: #dbeafe;
+      --red: #dc2626;
+      --red-bg: #fee2e2;
+      --star: #f59e0b;
+      --radius: 12px;
+      --shadow: 0 1px 4px rgba(0,0,0,.08);
+      --lukas: #2563eb;
+      --jana:  #db2777;
+      --jakub: #0891b2;
+    }
+
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    header { background: var(--card); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    header h1 { font-size: 1.15rem; font-weight: 700; }
+    .header-meta { margin-top: 4px; font-size: .8rem; color: var(--muted); }
+    .btn-back { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 5px 10px; font-size: .75rem; color: var(--muted); text-decoration: none; white-space: nowrap; }
+    .btn-back:hover { background: var(--bg); }
+    @media (max-width: 560px) { header { padding: 14px 16px; } }
+
+    nav.tabs { background: var(--card); border-bottom: 1px solid var(--border); display: flex; gap: 4px; padding: 0 16px; overflow-x: auto; position: sticky; top: 0; z-index: 5; }
+    nav.tabs button { background: none; border: none; border-bottom: 2px solid transparent; padding: 12px 12px 10px; font: inherit; font-size: .85rem; font-weight: 600; color: var(--muted); cursor: pointer; white-space: nowrap; }
+    nav.tabs button.active { color: var(--text); border-bottom-color: var(--text); }
+    .badge { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 4px; border-radius: 999px; background: var(--orange); color: #fff; font-size: .68rem; line-height: 18px; text-align: center; }
+
+    main { max-width: 1000px; margin: 0 auto; padding: 24px 16px 48px; display: flex; flex-direction: column; gap: 16px; }
+    .panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); }
+    .panel h2 { font-size: .95rem; font-weight: 700; margin-bottom: 4px; }
+    .panel .sub { font-size: .8rem; color: var(--muted); margin-bottom: 12px; }
+    .panel.upozorneni { background: #fffbeb; border-color: #fde68a; }
+    .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .spacer { flex: 1; }
+    .muted { color: var(--muted); }
+    .small { font-size: .78rem; }
+
+    button.btn, .btn { font: inherit; font-size: .8rem; font-weight: 600; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 8px; padding: 6px 12px; cursor: pointer; white-space: nowrap; text-decoration: none; display: inline-block; }
+    .btn:hover { background: var(--bg); }
+    .btn.primary { background: var(--text); color: #fff; border-color: var(--text); }
+    .btn.primary:hover { background: #374151; }
+    .btn.small { padding: 3px 8px; font-size: .75rem; }
+    .btn.ghost { border-color: transparent; background: none; color: var(--muted); }
+    .btn.ghost:hover { color: var(--text); background: var(--bg); }
+    .btn.objednat { border-color: #fdba74; color: var(--orange); }
+    .btn:disabled { opacity: .5; cursor: default; }
+    select, input, textarea { font: inherit; font-size: .85rem; border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; background: var(--card); color: var(--text); min-width: 0; }
+
+    /* ── Týden ── */
+    .tyden-hlava { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .tyden-hlava h2 { font-size: 1.05rem; margin: 0; }
+    .dny { display: flex; flex-direction: column; gap: 12px; }
+    .den { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+    .den.dnes { border-color: var(--text); }
+    .den.ceka { border-color: #fdba74; box-shadow: 0 0 0 2px var(--orange-bg); }
+    .den-hlava { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 12px 14px; border-bottom: 1px solid var(--border); background: #fafafa; }
+    .den-datum { font-weight: 700; font-size: .92rem; min-width: 92px; }
+    .chip { display: inline-flex; align-items: center; gap: 4px; font-size: .72rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--bg); color: var(--muted); white-space: nowrap; }
+    .chip.obed { background: var(--orange-bg); color: var(--orange); }
+    .chip.vecere { background: var(--blue-bg); color: var(--blue); }
+    .chip.nic { background: #f3f4f6; color: #9ca3af; }
+    .chip.rucne::after { content: '✎'; margin-left: 2px; }
+    .osoby { display: inline-flex; gap: 3px; }
+    .os { width: 20px; height: 20px; border-radius: 50%; color: #fff; font-size: .62rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+    .os.jana { background: var(--jana); } .os.lukas { background: var(--lukas); } .os.jakub { background: var(--jakub); }
+    .os.pryc { background: #e5e7eb; color: #9ca3af; text-decoration: line-through; }
+    .den-telo { padding: 10px 14px 12px; display: flex; flex-direction: column; gap: 6px; }
+    .kand { display: grid; grid-template-columns: 26px 1fr auto; gap: 4px 10px; align-items: center; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border); }
+    .kand.vitez { border-color: #86efac; background: #f0fdf4; }
+    .kand .ikona { font-size: 1.2rem; text-align: center; }
+    .kand .nazev { font-weight: 600; font-size: .88rem; cursor: pointer; }
+    .kand .nazev:hover { text-decoration: underline; }
+    .kand .meta { grid-column: 2 / 4; font-size: .72rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+    .kand .skore { font-weight: 700; font-size: .8rem; text-align: right; white-space: nowrap; }
+    .vede { color: var(--green); font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+    .hvezdy { display: inline-flex; gap: 1px; }
+    .hvezdy button { background: none; border: none; cursor: pointer; font-size: 1.05rem; color: #d1d5db; padding: 0 1px; line-height: 1; }
+    .hvezdy button.on { color: var(--star); }
+    .hvezdy button:hover { transform: scale(1.15); }
+    .objednano { padding: 14px; border-radius: 10px; background: var(--orange-bg); color: var(--orange); font-weight: 700; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .nevari { padding: 10px; color: var(--muted); font-size: .85rem; }
+    .den-akce { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+
+    /* ── Měsíc ── */
+    .mesic { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+    .mesic .hd { font-size: .7rem; color: var(--muted); font-weight: 700; text-align: center; padding: 4px 0; }
+    .mbunka { min-height: 84px; border: 1px solid var(--border); border-radius: 8px; padding: 5px 6px; font-size: .72rem; background: var(--card); cursor: pointer; display: flex; flex-direction: column; gap: 3px; overflow: hidden; }
+    .mbunka:hover { border-color: var(--text); }
+    .mbunka.minule { opacity: .5; }
+    .mbunka.dnes { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); }
+    .mbunka .d { font-weight: 700; display: flex; justify-content: space-between; gap: 4px; }
+    .mbunka .j { font-weight: 600; line-height: 1.25; word-break: break-word; }
+    .mbunka .j.otaznik { color: var(--orange); font-weight: 500; }
+    .mbunka.nic .j { color: #9ca3af; font-weight: 400; }
+    .tyden-oznaceni { grid-column: 1 / -1; font-size: .7rem; color: var(--muted); font-weight: 700; margin-top: 6px; }
+    @media (max-width: 640px) { .mbunka { min-height: 64px; font-size: .64rem; padding: 4px; } }
+
+    /* ── Nákup ── */
+    .oddeleni h3 { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 14px 0 6px; }
+    .polozka { display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-bottom: 1px solid var(--border); font-size: .9rem; }
+    .polozka input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--green); flex-shrink: 0; }
+    .polozka .mn { color: var(--muted); font-size: .8rem; white-space: nowrap; }
+    .polozka .k { color: var(--muted); font-size: .72rem; }
+    .polozka.koupeno .t { text-decoration: line-through; color: var(--muted); }
+    .polozka .t { flex: 1; }
+    .prepinac { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .prepinac button { font: inherit; font-size: .8rem; font-weight: 600; background: var(--card); border: none; padding: 6px 12px; cursor: pointer; color: var(--muted); }
+    .prepinac button.on { background: var(--text); color: #fff; }
+    .jidlo-zitra { padding: 12px 14px; border-radius: 10px; background: var(--bg); display: flex; flex-direction: column; gap: 2px; margin-bottom: 4px; }
+    .jidlo-zitra b { font-size: 1rem; }
+    .stitek { display: inline-flex; align-items: center; gap: 4px; padding: 3px 4px 3px 10px; border-radius: 999px; background: var(--bg); font-size: .8rem; }
+    .stitek button { border: none; background: none; cursor: pointer; color: var(--muted); padding: 0 4px; font-size: .9rem; }
+
+    /* ── Recepty ── */
+    .recepty { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+    .recept { border: 1px solid var(--border); border-radius: 10px; padding: 12px; cursor: pointer; background: var(--card); display: flex; flex-direction: column; gap: 4px; }
+    .recept:hover { border-color: var(--text); }
+    .recept .n { font-weight: 700; font-size: .9rem; }
+    .recept .m { font-size: .74rem; color: var(--muted); }
+    .recept.archiv { opacity: .5; }
+    .filtry { display: flex; gap: 6px; flex-wrap: wrap; }
+    .filtry button { font: inherit; font-size: .78rem; font-weight: 600; border: 1px solid var(--border); background: var(--card); border-radius: 999px; padding: 4px 10px; cursor: pointer; color: var(--muted); }
+    .filtry button.on { background: var(--text); color: #fff; border-color: var(--text); }
+
+    /* ── Dialogy ── */
+    dialog { margin: auto; border: none; border-radius: 14px; padding: 0; width: min(520px, calc(100vw - 32px)); max-height: calc(100vh - 40px); box-shadow: 0 20px 50px rgba(0,0,0,.25); }
+    dialog.siroky { width: min(680px, calc(100vw - 32px)); }
+    dialog::backdrop { background: rgba(17,24,39,.4); }
+    dialog form, dialog .obsah { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+    dialog h3 { font-size: 1rem; }
+    dialog label { font-size: .78rem; color: var(--muted); font-weight: 600; display: flex; flex-direction: column; gap: 4px; }
+    dialog label input, dialog label select, dialog label textarea { color: var(--text); font-weight: 400; }
+    dialog .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    dialog .three { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; }
+    dialog .hint { font-size: .78rem; color: var(--muted); }
+    dialog .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; flex-wrap: wrap; }
+    .sur-radek { display: grid; grid-template-columns: minmax(0, 2.2fr) 70px 80px minmax(0, 1.3fr) 28px; gap: 6px; margin-bottom: 6px; }
+    @media (max-width: 560px) { .sur-radek { grid-template-columns: minmax(0, 1fr) 60px 70px 28px; } .sur-radek .odd { grid-column: 1 / 4; } }
+    .vyber-seznam { max-height: 46vh; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+    .vyber-seznam button { text-align: left; font: inherit; font-size: .85rem; border: 1px solid var(--border); background: var(--card); border-radius: 8px; padding: 8px 10px; cursor: pointer; display: flex; gap: 8px; align-items: center; }
+    .vyber-seznam button:hover { border-color: var(--text); }
+    .vyber-seznam button:disabled { opacity: .45; cursor: default; }
+    .vyber-seznam .poz { margin-left: auto; color: var(--muted); font-size: .72rem; white-space: nowrap; }
+    .postup { white-space: pre-line; font-size: .88rem; line-height: 1.5; }
+    .seznam-sur { font-size: .88rem; display: flex; flex-direction: column; gap: 3px; }
+    .seznam-sur div { display: flex; gap: 8px; }
+    .seznam-sur .mn { min-width: 90px; color: var(--muted); }
+
+    #toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--text); color: #fff; padding: 10px 16px; border-radius: 10px; font-size: .85rem; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 50; max-width: calc(100vw - 32px); }
+    #toast.on { opacity: 1; }
+    #toast.chyba { background: var(--red); }
+    .demo-banner { background: #fde68a; color: #1c1c1e; text-align: center; font-size: .85rem; font-weight: 600; padding: 6px 16px; }
+    .loading { text-align: center; color: var(--muted); padding: 40px; font-size: .9rem; }
+  </style>
+</head>
+<body>
+
+<div class="demo-banner" id="demo-banner" hidden>Ukázkový režim – smyšlená data, změny se neukládají.</div>
+
+<header>
+  <div>
+    <h1>🍲 Jídelníček</h1>
+    <div class="header-meta" id="header-meta">Co se bude vařit, hlasování rodiny a nákup na zítra</div>
+  </div>
+  <a class="btn-back" href="/rozcestnik/">← Rozcestník</a>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button data-view="tyden" class="active">Hlasování</button>
+  <button data-view="nakup">Nákup</button>
+  <button data-view="mesic">Měsíc</button>
+  <button data-view="recepty">Recepty</button>
+</nav>
+
+<main id="app"><div class="loading">Načítám…</div></main>
+
+<!-- ── Dialog: nastavení dne ── -->
+<dialog id="dlg-den">
+  <form method="dialog" id="form-den">
+    <h3 id="dlg-den-titul">Den</h3>
+    <label>Co se vaří
+      <select name="chod">
+        <option value="">Automaticky</option>
+        <option value="obed">Oběd</option>
+        <option value="vecere">Večeře</option>
+        <option value="nic">Nevaří se</option>
+      </select>
+    </label>
+    <label>Počet porcí <input type="number" name="porce" min="1" max="20" placeholder="automaticky"></label>
+    <label>Poznámka <input name="poznamka" placeholder="např. Lukáš má trénink, večeře až v 8"></label>
+    <div class="hint" id="den-hint"></div>
+    <div class="actions">
+      <button type="button" class="btn ghost" data-zavrit>Zrušit</button>
+      <button type="submit" class="btn primary" value="ok">Uložit</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ── Dialog: přidat návrh ke dni ── -->
+<dialog id="dlg-navrh">
+  <div class="obsah">
+    <h3 id="dlg-navrh-titul">Navrhnout jídlo</h3>
+    <input id="navrh-hledat" placeholder="Hledat recept…" autocomplete="off">
+    <div class="filtry" id="navrh-filtry"></div>
+    <div class="vyber-seznam" id="navrh-seznam"></div>
+    <div class="actions">
+      <button type="button" class="btn" id="navrh-novy">+ Nový recept</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn ghost" data-zavrit>Zavřít</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- ── Dialog: detail receptu ── -->
+<dialog id="dlg-recept" class="siroky">
+  <div class="obsah" id="recept-obsah"></div>
+</dialog>
+
+<!-- ── Dialog: úprava receptu ── -->
+<dialog id="dlg-uprava" class="siroky">
+  <form method="dialog" id="form-uprava">
+    <h3 id="dlg-uprava-titul">Nový recept</h3>
+    <label>Název <input name="nazev" required></label>
+    <div class="three">
+      <label>Typ
+        <select name="typ">
+          <option value="vareni">🍳 Vaření</option>
+          <option value="rychlovka">🥪 Rychlovka</option>
+          <option value="mrazak">🧊 Z mražáku</option>
+          <option value="objednavka">🛵 Objednávka</option>
+        </select>
+      </label>
+      <label>Porcí <input type="number" name="porce" min="1" max="20" value="3" required></label>
+      <label>Minut <input type="number" name="cas_min" min="0" max="1440"></label>
+    </div>
+    <label>Štítky <input name="stitky" placeholder="kuře, ryba, vege, polévka… (oddělit čárkou)"></label>
+    <div>
+      <label style="margin-bottom:6px">Suroviny <span style="font-weight:400">– množství na uvedený počet porcí</span></label>
+      <div id="sur-radky"></div>
+      <div class="row">
+        <button type="button" class="btn small ghost" id="sur-pridat">+ Surovina</button>
+        <button type="button" class="btn small ghost" id="sur-text">Vložit jako text…</button>
+      </div>
+    </div>
+    <label>Postup <textarea name="postup" rows="5"></textarea></label>
+    <label>Odkaz (nepovinné) <input name="odkaz" type="url" placeholder="https://…"></label>
+    <div class="actions">
+      <button type="button" class="btn ghost" id="uprava-archiv" hidden>Archivovat</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn ghost" data-zavrit>Zrušit</button>
+      <button type="submit" class="btn primary" value="ok">Uložit</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ── Dialog: import receptu z textu (např. ze Samsung Notes) ── -->
+<dialog id="dlg-import" class="siroky">
+  <form method="dialog" id="form-import">
+    <h3 id="dlg-import-titul">Vložit recept z textu</h3>
+    <div class="hint">Zkopírujte celou poznámku (např. ze Samsung Notes) a vložte ji sem. První řádek je název, řádky s množstvím („500 g kuřecí stehna“, „- 2 mrkve“) jsou suroviny, zbytek je postup. Výsledek ještě před uložením zkontrolujete.</div>
+    <textarea name="text" rows="14" placeholder="Kuřecí adobo&#10;&#10;Suroviny:&#10;800 g kuřecích stehen&#10;100 ml sójové omáčky&#10;1 hlavička česneku&#10;&#10;Postup:&#10;Kuře marinovat…"></textarea>
+    <div class="actions">
+      <button type="button" class="btn ghost" data-zavrit>Zrušit</button>
+      <button type="submit" class="btn primary" value="ok">Pokračovat</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ── Dialog: potvrzení ── -->
+<dialog id="dlg-potvrd">
+  <form method="dialog">
+    <h3>Opravdu?</h3>
+    <p id="potvrd-text" style="font-size:.9rem;white-space:pre-line"></p>
+    <div class="actions">
+      <button type="submit" class="btn ghost" value="ne">Zrušit</button>
+      <button type="submit" class="btn primary" value="ano">Ano</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast"></div>
+
+<script>
+// ── Osoby ────────────────────────────────────────────────
+// Jí a hlasují Jana, Lukáš a Jakub. Kdo je kdy doma, se bere z Plánovače.
+const OSOBY = [
+  { key: 'jana',  jmeno: 'Jana' },
+  { key: 'lukas', jmeno: 'Lukáš' },
+  { key: 'jakub', jmeno: 'Jakub' },
+];
+const OSOBA = Object.fromEntries(OSOBY.map(o => [o.key, o]));
+const VSECHNA_JMENA = ['Jana', 'Lukáš', 'Jakub', 'Matěj'];
+
+const TYPY = {
+  vareni:     { ikona: '🍳', nazev: 'Vaření' },
+  rychlovka:  { ikona: '🥪', nazev: 'Rychlovka' },
+  mrazak:     { ikona: '🧊', nazev: 'Z mražáku' },
+  objednavka: { ikona: '🛵', nazev: 'Objednávka' },
+};
+const CHODY = { obed: 'Oběd', vecere: 'Večeře', nic: 'Nevaří se' };
+const ODDELENI = {
+  zelenina: '🥬 Zelenina a ovoce', maso: '🥩 Maso a ryby', mlecne: '🥛 Mléčné a vejce', pecivo: '🍞 Pečivo',
+  trvanlive: '🥫 Trvanlivé', koreni: '🧂 Koření a omáčky', mrazene: '❄️ Mražené', napoje: '🧃 Nápoje', ostatni: '🛒 Ostatní',
+};
+const JEDNOTKY = ['g', 'kg', 'ml', 'l', 'ks', 'lžíce', 'lžička', 'stroužek', 'svazek', 'balení', 'plechovka', 'sklenice', 'sáček', 'hrst', 'špetka', 'kus', 'hlavička'];
+const NEOPAKOVAT_DNI = 14;   // automatický návrh nevybere jídlo, které vyhrálo v posledních N dnech
+const POCET_NAVRHU = 3;      // kolik návrhů na den připraví automatika
+const DNY = ['ne', 'po', 'út', 'st', 'čt', 'pá', 'so'];
+const DNY_PLNE = ['neděle', 'pondělí', 'úterý', 'středa', 'čtvrtek', 'pátek', 'sobota'];
+
+// ── Datumy (ISO řetězce, v UTC kvůli časovým pásmům) ──
+const D = (s) => new Date(s + 'T00:00:00Z');
+const iso = (d) => d.toISOString().slice(0, 10);
+const plus = (s, n) => { const d = D(s); d.setUTCDate(d.getUTCDate() + n); return iso(d); };
+const denTydne = (s) => D(s).getUTCDay();
+const jeVikend = (s) => { const w = denTydne(s); return w === 0 || w === 6; };
+const pondeli = (s) => plus(s, -((denTydne(s) + 6) % 7));
+function* dny(a, b) { for (let s = a; s <= b; s = plus(s, 1)) yield s; }
+const DNES = (() => { const d = new Date(); return iso(new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))); })();
+const fmtK = (s) => { const d = D(s); return `${d.getUTCDate()}. ${d.getUTCMonth() + 1}.`; };
+const fmtDen = (s) => `${DNY[denTydne(s)]} ${fmtK(s)}`;
+const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const bezDiakritiky = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const norm = (t) => bezDiakritiky(t).replace(/\s+/g, ' ').trim();
+const osobaZeJmena = (jmeno) => OSOBY.find(o => bezDiakritiky(jmeno).startsWith(bezDiakritiky(o.jmeno)))?.key || null;
+const porceSlovo = (n) => n === 1 ? 'porce' : (n >= 2 && n <= 4 ? 'porce' : 'porcí');
+
+// ── Ukázkový režim (?demo) ──
+const DEMO = new URLSearchParams(location.search).has('demo');
+async function demoData() {
+  const vychozi = await fetch('recepty-vychozi.json').then(r => r.json());
+  let id = 1;
+  const recepty = [], suroviny = [];
+  for (const r of vychozi) {
+    const rid = id++;
+    recepty.push({ id: rid, nazev: r.nazev, typ: r.typ, porce: r.porce, cas_min: r.cas_min, stitky: r.stitky, postup: r.postup, odkaz: '', aktivni: true, pridal: 'Ukázka' });
+    r.suroviny.forEach(([nazev, mnozstvi, jednotka, oddeleni], i) => suroviny.push({ id: id++, recept_id: rid, nazev, mnozstvi, jednotka, oddeleni, poradi: i }));
+  }
+  const rid = (n) => recepty.find(r => r.nazev.startsWith(n)).id;
+  const po = plus(pondeli(DNES), 7);  // příští pondělí
+  const d = (n) => plus(po, n);
+  const kandidati = [], hlasy = [];
+  const k = (datum, nazev, navrhl, ...h) => {
+    const kid = id++;
+    kandidati.push({ id: kid, datum, recept_id: rid(nazev), navrhl });
+    h.forEach(([kdo, hod]) => hlasy.push({ kandidat_id: kid, kdo, hodnoceni: hod }));
+  };
+  // tento týden (už rozhodnuto) – kvůli nákupu na zítra
+  for (let i = 0; i < 7; i++) {
+    const s = plus(pondeli(DNES), i);
+    const n = ['Kuřecí adobo', 'Vajíčková', 'Špagety', 'Polévka z mražáku', 'Tacos', 'Svíčková', 'Pečené kuře'][i];
+    k(s, n, 'Jana', ['Jana', 4], ['Jakub', 4], ['Lukáš', 5]);
+  }
+  k(plus(DNES, 1), 'Losos', 'Jakub', ['Jana', 3]);
+  // příští týden – hlasuje se
+  k(d(0), 'Kuřecí kari', 'Jana', ['Jana', 5], ['Lukáš', 4]);
+  k(d(0), 'Čočková polévka', 'Jakub', ['Jakub', 4], ['Jana', 3]);
+  k(d(0), 'Toasty', 'Lukáš', ['Lukáš', 5]);
+  k(d(1), 'Tuňáková', 'Jakub', ['Jakub', 4]);
+  k(d(1), 'Guláš z mražáku', 'Jana', ['Jana', 4], ['Lukáš', 4]);
+  k(d(2), 'Krevety', 'Lukáš', ['Lukáš', 5], ['Jakub', 5]);
+  k(d(2), 'Zeleninové rizoto', 'Jana', ['Jana', 5], ['Jakub', 2]);
+  k(d(2), 'Řecký salát', 'Jana');
+  k(d(3), 'Smažený řízek', 'Lukáš', ['Lukáš', 5]);
+  k(d(3), 'Mražená pizza', 'Lukáš');
+  k(d(5), 'Sinigang', 'Jana', ['Jana', 5], ['Jakub', 4]);
+  k(d(5), 'Svíčková', 'Jakub', ['Jakub', 5], ['Lukáš', 3]);
+  k(d(6), 'Pečené kuře', 'Jana');
+  const dnyR = [{ datum: d(4), objednavka: true, chod: null, porce: null, vybrany_kandidat_id: null, poznamka: 'Pátek – pizza zvenku' }];
+  // Plánovač: Jana na služební cestě, Lukáš má ve středu volno ve škole
+  const volno = [
+    { osoba: 'jana', zacatek: d(1), konec: d(2), typ: 'sluzebni', popis: 'Singapur – konference' },
+    { osoba: 'lukas', zacatek: d(2), konec: d(2), typ: 'skola', popis: 'Teacher development day' },
+  ];
+  const nakup = [{ id: id++, datum: DNES, klic: null, text: 'mléko', koupeno: false }];
+  const doma = ['sůl', 'pepř', 'olej', 'cukr', 'mouka', 'ocet', 'rýže', 'sójová omáčka'].map(n => ({ id: id++, nazev: n }));
+  return { recepty, suroviny, kandidati, hlasy, dny: dnyR, nakup, doma, plan: { volno, svatky: [], nastaveni: { jakub_volno_od: '2027-01-01' } } };
+}
+
+// ── Datová vrstva ────────────────────────────────────────
+const api = DEMO ? (() => {
+  let seq = 100000;
+  return {
+    nacti: demoData,
+    async ulozRecept(r, sur) {
+      const recept = { ...r, id: r.id || ++seq, aktivni: r.aktivni ?? true };
+      return { recept, suroviny: sur.map((s, i) => ({ ...s, id: ++seq, recept_id: recept.id, poradi: i })) };
+    },
+    async archivujRecept(id, aktivni) { return { ...stav.recepty.find(r => r.id === id), aktivni }; },
+    async pridejKandidaty(rows) { return rows.map(r => ({ ...r, id: ++seq, navrhl: stav.ja.jmenoCele })); },
+    async smazKandidata() {},
+    async hlasuj(kandidat_id, hodnoceni) { return { kandidat_id, kdo: stav.ja.jmenoCele, hodnoceni }; },
+    async zrusHlas() {},
+    async ulozDen(datum, patch) { return { ...(stav.dny.find(x => x.datum === datum) || { datum, chod: null, porce: null, vybrany_kandidat_id: null, objednavka: false, poznamka: '' }), ...patch }; },
+    async odskrtni(datum, klic, text, koupeno) { return { id: ++seq, datum, klic, text, koupeno }; },
+    async pridejNakup(datum, text) { return { id: ++seq, datum, klic: null, text, koupeno: false }; },
+    async upravNakup(id, patch) { return { ...stav.nakup.find(x => x.id === id), ...patch }; },
+    async smazNakup() {},
+    async pridejDoma(nazev) { return { id: ++seq, nazev }; },
+    async smazDoma() {},
+  };
+})() : (() => {
+  const db = () => RodinaAuth.client;
+  const ok = ({ data, error }) => { if (error) throw error; return data; };
+  const smazano = (r) => { if (!ok(r)?.length) throw new Error('Záznam se v databázi nesmazal.'); };
+  const OD = plus(DNES, -60);  // historie kvůli „nedávno jsme měli“
+  return {
+    async nacti() {
+      const [r, s, k, h, d, n, m] = await Promise.all([
+        db().from('jid_recepty').select('*').order('nazev'),
+        db().from('jid_suroviny').select('*').order('poradi'),
+        db().from('jid_kandidati').select('*').gte('datum', OD).order('id'),
+        db().from('jid_hlasy').select('kandidat_id, kdo, hodnoceni, jid_kandidati!inner(datum)').gte('jid_kandidati.datum', OD),
+        db().from('jid_dny').select('*').gte('datum', OD),
+        db().from('jid_nakup').select('*').gte('datum', plus(DNES, -7)).order('id'),
+        db().from('jid_doma').select('*').order('nazev'),
+      ]);
+      // Plánovač (kdo je kdy doma) – když se nepodaří načíst, platí jen víkendy
+      let plan = { volno: [], svatky: [], nastaveni: {} };
+      try {
+        const [pv, ps, pn] = await Promise.all([
+          db().from('plan_volno').select('osoba, zacatek, konec, typ, popis').gte('konec', OD),
+          db().from('plan_svatky').select('datum, nazev').gte('datum', OD),
+          db().from('plan_nastaveni').select('*'),
+        ]);
+        plan = { volno: ok(pv), svatky: ok(ps), nastaveni: Object.fromEntries(ok(pn).map(x => [x.klic, x.hodnota])) };
+      } catch (e) { console.warn('Plánovač se nenačetl', e); stav.bezPlanovace = true; }
+      return {
+        recepty: ok(r), suroviny: ok(s), kandidati: ok(k),
+        hlasy: ok(h).map(({ kandidat_id, kdo, hodnoceni }) => ({ kandidat_id, kdo, hodnoceni })),
+        dny: ok(d), nakup: ok(n), doma: ok(m), plan,
+      };
+    },
+    async ulozRecept(r, sur) {
+      const { id, ...data } = r;
+      const recept = id
+        ? ok(await db().from('jid_recepty').update(data).eq('id', id).select().single())
+        : ok(await db().from('jid_recepty').insert(data).select().single());
+      ok(await db().from('jid_suroviny').delete().eq('recept_id', recept.id));
+      const radky = sur.map((s, i) => ({ recept_id: recept.id, nazev: s.nazev, mnozstvi: s.mnozstvi, jednotka: s.jednotka, oddeleni: s.oddeleni, poradi: i }));
+      const suroviny = radky.length ? ok(await db().from('jid_suroviny').insert(radky).select()) : [];
+      return { recept, suroviny };
+    },
+    async archivujRecept(id, aktivni) { return ok(await db().from('jid_recepty').update({ aktivni }).eq('id', id).select().single()); },
+    async pridejKandidaty(rows) { return ok(await db().from('jid_kandidati').insert(rows).select()); },
+    async smazKandidata(id) { smazano(await db().from('jid_kandidati').delete().eq('id', id).select('id')); },
+    async hlasuj(kandidat_id, hodnoceni) {
+      return ok(await db().from('jid_hlasy').upsert({ kandidat_id, kdo: stav.ja.jmenoCele, hodnoceni }, { onConflict: 'kandidat_id,kdo' }).select('kandidat_id, kdo, hodnoceni').single());
+    },
+    async zrusHlas(kandidat_id) { smazano(await db().from('jid_hlasy').delete().eq('kandidat_id', kandidat_id).eq('kdo', stav.ja.jmenoCele).select('kandidat_id')); },
+    async ulozDen(datum, patch) { return ok(await db().from('jid_dny').upsert({ datum, ...patch }, { onConflict: 'datum' }).select().single()); },
+    async odskrtni(datum, klic, text, koupeno) {
+      return ok(await db().from('jid_nakup').upsert({ datum, klic, text, koupeno }, { onConflict: 'datum,klic' }).select().single());
+    },
+    async pridejNakup(datum, text) { return ok(await db().from('jid_nakup').insert({ datum, text }).select().single()); },
+    async upravNakup(id, patch) { return ok(await db().from('jid_nakup').update(patch).eq('id', id).select().single()); },
+    async smazNakup(id) { smazano(await db().from('jid_nakup').delete().eq('id', id).select('id')); },
+    async pridejDoma(nazev) { return ok(await db().from('jid_doma').insert({ nazev }).select().single()); },
+    async smazDoma(id) { smazano(await db().from('jid_doma').delete().eq('id', id).select('id')); },
+  };
+})();
+
+// ── Stav ─────────────────────────────────────────────────
+const stav = {
+  recepty: [], suroviny: [], kandidati: [], hlasy: [], dny: [], nakup: [], doma: [], plan: { volno: [], svatky: [], nastaveni: {} },
+  ja: null, view: 'tyden', tyden: plus(pondeli(DNES), 7), nakupDen: DNES, nakupRezim: 'zitra', receptFiltr: '', receptHledat: '',
+};
+let idx = null;
+
+function prepocti() {
+  const recept = new Map(stav.recepty.map(r => [r.id, r]));
+  const surRecept = new Map();
+  for (const s of stav.suroviny) { if (!surRecept.has(s.recept_id)) surRecept.set(s.recept_id, []); surRecept.get(s.recept_id).push(s); }
+  const kandDne = new Map();
+  for (const k of stav.kandidati) { if (!kandDne.has(k.datum)) kandDne.set(k.datum, []); kandDne.get(k.datum).push(k); }
+  const hlasyK = new Map();
+  for (const h of stav.hlasy) { if (!hlasyK.has(h.kandidat_id)) hlasyK.set(h.kandidat_id, []); hlasyK.get(h.kandidat_id).push(h); }
+  const den = new Map(stav.dny.map(d => [d.datum, d]));
+  // Plánovač: osoba → datum → [záznamy volna]
+  const volno = Object.fromEntries(OSOBY.map(o => [o.key, new Map()]));
+  for (const r of stav.plan.volno) {
+    const m = volno[r.osoba]; if (!m) continue;
+    for (const s of dny(r.zacatek, r.konec)) { if (!m.has(s)) m.set(s, []); m.get(s).push(r); }
+  }
+  const svatky = new Map(stav.plan.svatky.map(s => [s.datum, s.nazev]));
+  const doma = new Set(stav.doma.map(d => norm(d.nazev)));
+  idx = { recept, surRecept, kandDne, hlasyK, den, volno, svatky, doma, vitezove: new Map(), naposledy: new Map() };
+  // vítězové chronologicky – shoda se rozhodne podle toho, co jsme měli dávno
+  const data = [...new Set([...kandDne.keys(), ...den.keys()])].sort();
+  for (const s of data) {
+    const v = spocitejViteze(s);
+    idx.vitezove.set(s, v);
+    if (v?.kandidat) idx.naposledy.set(v.kandidat.recept_id, s);
+  }
+}
+
+// ── Kdo je doma (stejná pravidla jako Plánovač) ──
+const jakubVolnoOd = () => String(stav.plan.nastaveni.jakub_volno_od || '2027-01-01');
+// { doma: přes den doma a volno, pryc: je jinde (služební / soukromá cesta), duvod }
+function stavOsoby(o, s) {
+  const z = idx.volno[o]?.get(s) || [];
+  const popis = z.map(r => r.popis || r.typ).join(', ');
+  if (z.some(r => r.typ === 'sluzebni' || r.typ === 'cesta')) return { doma: false, pryc: true, duvod: popis };
+  if (z.some(r => r.typ === 'vyuka')) return { doma: false, pryc: false, duvod: popis };
+  if (z.length) return { doma: true, pryc: false, duvod: popis };
+  if (o === 'jakub' && s >= jakubVolnoOd()) return { doma: true, pryc: false, duvod: 'bez práce' };
+  if (idx.svatky.has(s)) return { doma: true, pryc: false, duvod: idx.svatky.get(s) };
+  if (jeVikend(s)) return { doma: true, pryc: false, duvod: 'víkend' };
+  return { doma: false, pryc: false, duvod: o === 'lukas' ? 'škola' : 'práce' };
+}
+
+// Pravidlo: když jsou přes den doma aspoň 2, vaří se oběd; jinak večeře pro ty, kdo nejsou pryč.
+// Když je doma jen 1 (nebo nikdo), nevaří se. Vše jde u dne ručně přepsat.
+function infoDne(s) {
+  const st = Object.fromEntries(OSOBY.map(o => [o.key, stavOsoby(o.key, s)]));
+  const doma = OSOBY.filter(o => st[o.key].doma).map(o => o.key);
+  const tady = OSOBY.filter(o => !st[o.key].pryc).map(o => o.key);
+  const autoChod = doma.length >= 2 ? 'obed' : (tady.length >= 2 ? 'vecere' : 'nic');
+  const r = idx.den.get(s) || {};
+  const chod = r.chod || autoChod;
+  const autoPorce = Math.max(1, chod === 'obed' ? doma.length : tady.length);
+  const porce = r.porce || autoPorce;
+  let duvod;
+  if (autoChod === 'obed') duvod = `přes den doma: ${doma.map(k => OSOBA[k].jmeno).join(', ')}`;
+  else if (autoChod === 'vecere') duvod = doma.length ? `přes den doma jen ${OSOBA[doma[0]].jmeno}` : 'přes den nikdo doma';
+  else duvod = tady.length ? `doma jen ${OSOBA[tady[0]].jmeno}` : 'nikdo není doma';
+  return { st, doma, tady, autoChod, chod, rucneChod: !!r.chod, porce, rucnePorce: !!r.porce, duvod, objednavka: !!r.objednavka, poznamka: r.poznamka || '', zaznam: r };
+}
+
+// ── Hlasování ──
+const hlasyKand = (k) => idx.hlasyK.get(k.id) || [];
+const skore = (k) => hlasyKand(k).reduce((a, h) => a + h.hodnoceni, 0);
+const mujHlas = (k) => stav.ja ? hlasyKand(k).find(h => osobaZeJmena(h.kdo) === stav.ja.key)?.hodnoceni || 0 : 0;
+// Vítěz dne: ručně vybraný, jinak nejvíc hvězdiček (součet); při shodě víc hlasujících,
+// pak jídlo, které jsme měli nejdávněji, pak dřív navržené. Bez hlasů vítěz není.
+function spocitejViteze(s) {
+  const r = idx.den.get(s);
+  if (r?.objednavka) return { objednavka: true };
+  const kand = (idx.kandDne.get(s) || []).filter(k => idx.recept.has(k.recept_id));
+  if (r?.vybrany_kandidat_id) {
+    const k = kand.find(x => x.id === r.vybrany_kandidat_id);
+    if (k) return { kandidat: k, rucne: true };
+  }
+  const sHlasy = kand.filter(k => hlasyKand(k).length);
+  if (!sHlasy.length) return null;
+  sHlasy.sort((a, b) => skore(b) - skore(a) || hlasyKand(b).length - hlasyKand(a).length
+    || (idx.naposledy.get(a.recept_id) || '').localeCompare(idx.naposledy.get(b.recept_id) || '') || a.id - b.id);
+  return { kandidat: sHlasy[0], rucne: false };
+}
+const vitez = (s) => idx.vitezove.get(s) || null;
+// den čeká na přihlášeného: vaří se, má návrhy a já jsem nehodnotil(a) ani jeden
+function cekaNaMe(s) {
+  if (!stav.ja) return false;
+  const i = infoDne(s);
+  if (i.chod === 'nic' || i.objednavka) return false;
+  const kand = idx.kandDne.get(s) || [];
+  return kand.length > 0 && !kand.some(k => mujHlas(k));
+}
+const tydenDny = (po) => [...dny(po, plus(po, 6))];
+const pocetCekaNaMe = () => tydenDny(plus(pondeli(DNES), 7)).filter(cekaNaMe).length;
+
+// ── Nákup ──
+const kusove = (j) => !['g', 'kg', 'ml', 'l'].includes(j);
+function fmtMn(x, j) {
+  if (x == null || x === '' || isNaN(x)) return j || '';
+  let v;
+  if (j === 'g' || j === 'ml') v = x >= 100 ? Math.round(x / 10) * 10 : Math.round(x);
+  else if (j === 'kg' || j === 'l') v = Math.round(x * 10) / 10;
+  else if (['stroužek', 'plechovka', 'sklenice', 'sáček', 'balení', 'hlavička', 'svazek'].includes(j)) v = Math.ceil(x - 1e-9);
+  else v = Math.ceil(x * 2 - 1e-9) / 2;
+  return `${String(v).replace('.', ',')} ${j}`.trim();
+}
+// suroviny na jídlo dne s (přepočtené na porce), bez věcí „Mám doma“
+function surovinyDne(s) {
+  const v = vitez(s);
+  if (!v?.kandidat) return { polozky: [], doma: [] };
+  const r = idx.recept.get(v.kandidat.recept_id);
+  if (!r || r.typ === 'objednavka') return { polozky: [], doma: [] };
+  const i = infoDne(s);
+  const k = i.porce / (r.porce || 1);
+  const polozky = [], doma = [];
+  for (const su of idx.surRecept.get(r.id) || []) {
+    const p = { klic: `${norm(su.nazev)}|${su.jednotka}`, nazev: su.nazev, mnozstvi: su.mnozstvi == null ? null : Number(su.mnozstvi) * k, jednotka: su.jednotka, oddeleni: su.oddeleni, jidla: [{ datum: s, nazev: r.nazev }] };
+    (idx.doma.has(norm(su.nazev)) ? doma : polozky).push(p);
+  }
+  return { polozky, doma };
+}
+function sectiPolozky(seznam) {
+  const m = new Map();
+  for (const p of seznam) {
+    const x = m.get(p.klic);
+    if (!x) { m.set(p.klic, { ...p, jidla: [...p.jidla] }); continue; }
+    x.mnozstvi = x.mnozstvi == null || p.mnozstvi == null ? (x.mnozstvi ?? p.mnozstvi) : x.mnozstvi + p.mnozstvi;
+    x.jidla.push(...p.jidla);
+  }
+  return [...m.values()];
+}
+
+// ── Vykreslení ───────────────────────────────────────────
+const app = document.getElementById('app');
+function prekresli() {
+  prepocti();
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('active', b.dataset.view === stav.view));
+  const n = pocetCekaNaMe();
+  document.querySelector('#tabs [data-view="tyden"]').innerHTML = `Hlasování${n ? `<span class="badge" title="Dny příštího týdne, kde jsi ještě nehlasoval(a)">${n}</span>` : ''}`;
+  ({ tyden: viewTyden, nakup: viewNakup, mesic: viewMesic, recepty: viewRecepty })[stav.view]();
+}
+
+const kolecka = (i, jen = null) => `<span class="osoby">${OSOBY.map(o => {
+  const s = i.st[o.key];
+  const tridy = ['os', o.key];
+  if (jen === 'obed' ? !s.doma : s.pryc) tridy.push('pryc');
+  return `<span class="${tridy.join(' ')}" title="${esc(o.jmeno)}: ${esc(s.duvod)}">${o.jmeno[0]}</span>`;
+}).join('')}</span>`;
+
+function hvezdy(k) {
+  const muj = mujHlas(k);
+  return `<span class="hvezdy" title="${muj ? 'Tvoje hodnocení (kliknutím na stejnou hvězdu ho zrušíš)' : 'Ohodnoť 1–5'}">${[1, 2, 3, 4, 5].map(n =>
+    `<button type="button" data-hlas="${k.id}" data-n="${n}" class="${n <= muj ? 'on' : ''}" aria-label="${n} z 5">★</button>`).join('')}</span>`;
+}
+
+function viewTyden() {
+  const po = stav.tyden;
+  const pristi = plus(pondeli(DNES), 7);
+  const nazevTydne = po === pondeli(DNES) ? 'Tento týden' : po === pristi ? 'Příští týden' : po < pondeli(DNES) ? 'Minulý týden' : 'Za ' + Math.round((D(po) - D(pondeli(DNES))) / 6048e5) + ' týdny';
+  const dnyT = tydenDny(po);
+  const cekajici = dnyT.filter(cekaNaMe);
+  const bezNavrhu = dnyT.filter(s => s >= DNES && !infoDne(s).objednavka && infoDne(s).chod !== 'nic' && !(idx.kandDne.get(s) || []).length);
+  let h = `<div class="panel"><div class="tyden-hlava">
+      <button class="btn small" data-tyden="-7" aria-label="Předchozí týden">←</button>
+      <h2>${nazevTydne} <span class="muted" style="font-weight:500">${fmtK(po)} – ${fmtK(plus(po, 6))}</span></h2>
+      <button class="btn small" data-tyden="7" aria-label="Další týden">→</button>
+      ${po !== pristi ? `<button class="btn small ghost" data-tyden-na="${pristi}">Příští týden</button>` : ''}
+      <span class="spacer"></span>
+      ${bezNavrhu.length ? `<button class="btn small" id="auto-navrh" title="Doplní ${POCET_NAVRHU} návrhy do dnů bez návrhů">✨ Navrhnout jídla (${bezNavrhu.length} ${bezNavrhu.length === 1 ? 'den' : bezNavrhu.length < 5 ? 'dny' : 'dní'})</button>` : ''}
+    </div>
+    <div class="sub" style="margin:8px 0 0">Ohodnoť návrhy hvězdičkami. Jídlo s nejvíc hvězdičkami vyhrává a jeho suroviny se hned objeví v nákupu na den předem.
+    ${stav.bezPlanovace ? '<br>⚠️ Nepodařilo se načíst Plánovač – kdo je doma, se počítá jen podle víkendů.' : ''}</div>
+    ${cekajici.length ? `<div class="sub" style="margin:6px 0 0;color:var(--orange);font-weight:600">👉 Čeká na tvůj hlas: ${cekajici.map(fmtDen).join(', ')}</div>` : ''}
+  </div><div class="dny">`;
+  for (const s of dnyT) h += kartaDne(s);
+  app.innerHTML = h + '</div>';
+}
+
+function kartaDne(s) {
+  const i = infoDne(s);
+  const v = vitez(s);
+  const kand = (idx.kandDne.get(s) || []).filter(k => idx.recept.has(k.recept_id))
+    .sort((a, b) => skore(b) - skore(a) || a.id - b.id);
+  const minule = s < DNES;
+  const tridy = ['den', s === DNES ? 'dnes' : '', cekaNaMe(s) && !minule ? 'ceka' : ''].join(' ');
+  let h = `<div class="${tridy}" id="den-${s}"><div class="den-hlava">
+    <span class="den-datum">${DNY_PLNE[denTydne(s)]} ${fmtK(s)}${s === DNES ? ' · dnes' : ''}</span>
+    <span class="chip ${i.chod} ${i.rucneChod ? 'rucne' : ''}" title="${i.rucneChod ? 'nastaveno ručně' : 'automaticky: ' + esc(i.duvod)}">${i.chod === 'obed' ? '☀️' : i.chod === 'vecere' ? '🌙' : '–'} ${CHODY[i.chod]}</span>
+    ${i.chod !== 'nic' ? `<span class="chip ${i.rucnePorce ? 'rucne' : ''}">${i.porce} ${porceSlovo(i.porce)}</span>` : ''}
+    ${kolecka(i, i.chod)}
+    <span class="small muted">${esc(i.duvod)}${i.poznamka ? ' · ' + esc(i.poznamka) : ''}</span>
+    <span class="spacer"></span>
+    <button class="btn small ghost" data-den="${s}" title="Oběd / večeře / nevaří se, porce, poznámka">⚙︎ Upravit</button>
+  </div><div class="den-telo">`;
+  if (i.objednavka) {
+    h += `<div class="objednano">🛵 Objednáváme zvenku <span class="small" style="font-weight:500">– nic se nevaří ani nekupuje</span><span class="spacer"></span>
+      <button class="btn small" data-objednat="${s}" data-hodnota="0">Nakonec vaříme</button></div>`;
+  } else if (i.chod === 'nic' && !kand.length) {
+    h += `<div class="nevari">Nevaří se – ${esc(i.duvod)}. Kdyby se přece jen vařilo, přepni to v ⚙︎ Upravit.</div>`;
+  } else {
+    if (!kand.length) h += `<div class="nevari">Zatím žádný návrh.</div>`;
+    for (const k of kand) {
+      const r = idx.recept.get(k.recept_id);
+      const jeVitez = v?.kandidat?.id === k.id;
+      const hl = hlasyKand(k);
+      const ostatni = hl.map(x => `${esc((osobaZeJmena(x.kdo) && OSOBA[osobaZeJmena(x.kdo)].jmeno) || x.kdo)} ${x.hodnoceni}★`).join(' · ');
+      const nap = idx.naposledy.get(r.id);
+      const mamNaposledy = nap && nap < s ? `naposledy ${fmtK(nap)}` : '';
+      const smiSmazat = !hl.length || (hl.length === 1 && mujHlas(k));
+      h += `<div class="kand ${jeVitez ? 'vitez' : ''}">
+        <span class="ikona" title="${TYPY[r.typ].nazev}">${TYPY[r.typ].ikona}</span>
+        <span class="nazev" data-recept="${r.id}" data-porce="${i.porce}">${esc(r.nazev)}</span>
+        <span class="skore">${jeVitez ? `<span class="vede">${v.rucne ? '✓ vybráno' : s < DNES ? 'vyhrálo' : 'vede'}</span> ` : ''}${hl.length ? `★ ${skore(k)}` : ''}</span>
+        <div class="meta">
+          ${stav.ja && !minule ? hvezdy(k) : ''}
+          <span>${ostatni || 'zatím bez hlasů'}</span>
+          ${r.cas_min ? `<span>⏱ ${r.cas_min} min</span>` : ''}
+          ${mamNaposledy ? `<span>${mamNaposledy}</span>` : ''}
+          <span>navrhl(a) ${esc(k.navrhl || '?')}</span>
+          <span class="spacer"></span>
+          ${!minule ? (jeVitez && v.rucne ? `<button class="btn small ghost" data-vybrat="${s}" data-k="">Zrušit výběr</button>`
+            : !jeVitez ? `<button class="btn small ghost" data-vybrat="${s}" data-k="${k.id}" title="Vybrat ručně bez ohledu na hlasy">Vybrat</button>` : '') : ''}
+          ${!minule && smiSmazat ? `<button class="btn small ghost" data-smaz-kand="${k.id}" title="Odebrat návrh">🗑</button>` : ''}
+        </div>
+      </div>`;
+    }
+    if (!minule) h += `<div class="den-akce">
+      <button class="btn small" data-navrh="${s}">+ Navrhnout jídlo</button>
+      <button class="btn small objednat" data-objednat="${s}" data-hodnota="1" title="Když se nechce vařit nebo něco padne – nic se nekupuje">🛵 Objednáme</button>
+    </div>`;
+  }
+  return h + '</div></div>';
+}
+
+function viewMesic() {
+  const od = pondeli(DNES);
+  let h = `<div class="panel"><h2>Měsíc dopředu</h2>
+    <div class="sub">Hrubý plán na 5 týdnů. Klepnutím na den přejdeš na hlasování v daném týdnu. ☀️ oběd, 🌙 večeře, 🛵 objednáváme, ❓ zatím nerozhodnuto.</div>
+    <div class="mesic">${['po', 'út', 'st', 'čt', 'pá', 'so', 'ne'].map(d => `<div class="hd">${d}</div>`).join('')}`;
+  for (let t = 0; t < 5; t++) {
+    const po = plus(od, t * 7);
+    h += `<div class="tyden-oznaceni">${t === 0 ? 'Tento týden' : t === 1 ? 'Příští týden' : ''} ${fmtK(po)} – ${fmtK(plus(po, 6))}</div>`;
+    for (const s of tydenDny(po)) {
+      const i = infoDne(s);
+      const v = vitez(s);
+      const kand = idx.kandDne.get(s) || [];
+      let j;
+      if (i.objednavka) j = `<span class="j">🛵 objednáme</span>`;
+      else if (v?.kandidat) j = `<span class="j">${TYPY[idx.recept.get(v.kandidat.recept_id).typ].ikona} ${esc(idx.recept.get(v.kandidat.recept_id).nazev)}</span>`;
+      else if (i.chod === 'nic') j = `<span class="j">nevaří se</span>`;
+      else j = `<span class="j otaznik">❓ ${kand.length ? `${kand.length} ${kand.length === 1 ? 'návrh' : kand.length < 5 ? 'návrhy' : 'návrhů'}` : 'bez návrhu'}</span>`;
+      h += `<div class="mbunka ${s < DNES ? 'minule' : ''} ${s === DNES ? 'dnes' : ''} ${i.chod === 'nic' && !i.objednavka ? 'nic' : ''}" data-skok="${s}" title="${esc(i.duvod)}">
+        <span class="d"><span>${D(s).getUTCDate()}.${D(s).getUTCMonth() + 1}.</span><span>${i.chod === 'obed' ? '☀️' : i.chod === 'vecere' ? '🌙' : ''}${cekaNaMe(s) ? '<span style="color:var(--orange)">●</span>' : ''}</span></span>${j}</div>`;
+    }
+  }
+  app.innerHTML = h + '</div></div>';
+}
+
+function viewNakup() {
+  const den = stav.nakupDen;
+  const prepinac = `<span class="prepinac"><button data-rezim="zitra" class="${stav.nakupRezim === 'zitra' ? 'on' : ''}">Na zítra</button><button data-rezim="tyden" class="${stav.nakupRezim === 'tyden' ? 'on' : ''}">Na 7 dní</button></span>`;
+  let h = `<div class="panel"><div class="tyden-hlava">${prepinac}<span class="spacer"></span>`;
+  if (stav.nakupRezim === 'zitra') {
+    const jidlo = plus(den, 1);
+    const i = infoDne(jidlo), v = vitez(jidlo);
+    h += `<button class="btn small" data-nakup-den="-1" aria-label="Předchozí den">←</button>
+      <b>${den === DNES ? 'Dnes' : den === plus(DNES, 1) ? 'Zítra' : fmtDen(den)}</b>
+      <button class="btn small" data-nakup-den="1" aria-label="Další den">→</button>
+      ${den !== DNES ? `<button class="btn small ghost" data-nakup-dnes>Dnes</button>` : ''}</div>
+      <div class="sub" style="margin:8px 0 10px">Nákup ${den === DNES ? 'dnes' : fmtDen(den)} na ${DNY_PLNE[denTydne(jidlo)]} ${fmtK(jidlo)}</div>`;
+    let popis;
+    if (i.objednavka) popis = `<b>🛵 Objednáváme zvenku</b><span class="small muted">Na jídlo se nic nekupuje.</span>`;
+    else if (v?.kandidat) {
+      const r = idx.recept.get(v.kandidat.recept_id);
+      popis = `<b>${TYPY[r.typ].ikona} <a href="#" data-recept="${r.id}" data-porce="${i.porce}" style="color:inherit">${esc(r.nazev)}</a></b>
+        <span class="small muted">${CHODY[i.chod]} · ${i.porce} ${porceSlovo(i.porce)}${v.rucne ? ' · vybráno ručně' : ` · ${jidlo < DNES ? 'vyhrálo' : 'vede'} hlasování (★ ${skore(v.kandidat)})`}${r.typ === 'mrazak' ? ' · 🧊 nezapomeň večer přendat z mražáku do lednice' : ''}</span>`;
+    } else if (i.chod === 'nic') popis = `<b>Nevaří se</b><span class="small muted">${esc(i.duvod)}</span>`;
+    else {
+      const n = (idx.kandDne.get(jidlo) || []).length;
+      popis = `<b>❓ Ještě není rozhodnuto</b><span class="small muted">${n ? `${n} ${n === 1 ? 'návrh' : 'návrhy'}, zatím bez hlasů.` : 'Zatím žádný návrh.'} <a href="#" data-skok="${jidlo}">Hlasovat</a></span>`;
+    }
+    h += `<div class="jidlo-zitra">${popis}</div>`;
+    const { polozky, doma } = surovinyDne(jidlo);
+    h += seznamNakupu(den, polozky, doma, true);
+  } else {
+    const od = plus(DNES, 1), doDne = plus(DNES, 7);
+    h += `</div><div class="sub" style="margin:8px 0 10px">Všechno na ${fmtK(od)} – ${fmtK(doDne)} dohromady – hodí se na velký nákup trvanlivých věcí. U položky je, na který den je potřeba. Odškrtává se v „Na zítra“.</div>`;
+    const vse = [], doma = [];
+    let nerozhodnuto = [];
+    for (const s of dny(od, doDne)) {
+      const x = surovinyDne(s); vse.push(...x.polozky); doma.push(...x.doma);
+      const i = infoDne(s);
+      if (!i.objednavka && i.chod !== 'nic' && !vitez(s)) nerozhodnuto.push(s);
+    }
+    if (nerozhodnuto.length) h += `<div class="jidlo-zitra"><span class="small">❓ Ještě nerozhodnuto: ${nerozhodnuto.map(fmtDen).join(', ')} – jejich suroviny tu zatím nejsou.</span></div>`;
+    h += seznamNakupu(null, vse, doma, false);
+  }
+  h += `</div>`;
+  // Mám doma
+  h += `<div class="panel"><h2>🏠 Mám doma</h2>
+    <div class="sub">Základy, které máme vždycky doma – do nákupu se nepřidávají (musí se jmenovat stejně jako surovina v receptu).</div>
+    <div class="row">${stav.doma.map(d => `<span class="stitek">${esc(d.nazev)}<button data-smaz-doma="${d.id}" aria-label="Odebrat">×</button></span>`).join('')}</div>
+    <form class="row" id="form-doma" style="margin-top:10px"><input name="nazev" placeholder="např. sůl" required style="flex:1;max-width:260px"><button class="btn small">Přidat</button></form>
+  </div>`;
+  app.innerHTML = h;
+}
+
+function seznamNakupu(den, polozky, doma, odskrtavat) {
+  const sectene = sectiPolozky(polozky);
+  const zaznam = (klic) => stav.nakup.find(n => n.datum === den && n.klic === klic);
+  const rucni = odskrtavat ? stav.nakup.filter(n => n.datum === den && n.klic == null) : [];
+  let h = '';
+  if (!sectene.length && !rucni.length) h += `<div class="nevari">${odskrtavat ? 'Na zítřek není z receptu potřeba nic koupit.' : 'Zatím nic.'}</div>`;
+  const skupiny = {};
+  for (const p of sectene) (skupiny[p.oddeleni] ||= []).push(p);
+  for (const [odd, nazev] of Object.entries(ODDELENI)) {
+    const pol = (skupiny[odd] || []).sort((a, b) => a.nazev.localeCompare(b.nazev, 'cs'));
+    if (!pol.length) continue;
+    h += `<div class="oddeleni"><h3>${nazev}</h3>`;
+    for (const p of pol) {
+      const koupeno = odskrtavat && zaznam(p.klic)?.koupeno;
+      const kdy = odskrtavat ? '' : `<span class="k">${[...new Set(p.jidla.map(j => DNY[denTydne(j.datum)]))].join(', ')}</span>`;
+      h += `<label class="polozka ${koupeno ? 'koupeno' : ''}">
+        ${odskrtavat ? `<input type="checkbox" data-odskrtni="${esc(p.klic)}" data-text="${esc(p.nazev)}" ${koupeno ? 'checked' : ''}>` : ''}
+        <span class="t">${esc(p.nazev)}</span>${kdy}<span class="mn">${esc(fmtMn(p.mnozstvi, p.jednotka))}</span></label>`;
+    }
+    h += `</div>`;
+  }
+  if (odskrtavat) {
+    h += `<div class="oddeleni"><h3>✍️ Navíc</h3>`;
+    for (const n of rucni) h += `<label class="polozka ${n.koupeno ? 'koupeno' : ''}"><input type="checkbox" data-rucni="${n.id}" ${n.koupeno ? 'checked' : ''}><span class="t">${esc(n.text)}</span><button type="button" class="btn small ghost" data-smaz-nakup="${n.id}" aria-label="Smazat">🗑</button></label>`;
+    h += `<form class="row" id="form-navic" style="margin-top:8px"><input name="text" placeholder="Přidat položku (mléko, ovoce na svačiny…)" required style="flex:1"><button class="btn small">Přidat</button></form></div>`;
+  }
+  if (doma.length) {
+    const jmena = [...new Set(doma.map(d => d.nazev))];
+    h += `<div class="small muted" style="margin-top:12px">🏠 Nepočítá se, máme doma: ${jmena.map(esc).join(', ')}</div>`;
+  }
+  return h;
+}
+
+function viewRecepty() {
+  const q = norm(stav.receptHledat);
+  const f = stav.receptFiltr;
+  const seznam = stav.recepty
+    .filter(r => (f === 'archiv' ? !r.aktivni : r.aktivni && (!f || r.typ === f)))
+    .filter(r => !q || norm(r.nazev).includes(q) || (r.stitky || []).some(t => norm(t).includes(q)) || (idx.surRecept.get(r.id) || []).some(s => norm(s.nazev).includes(q)))
+    .sort((a, b) => a.nazev.localeCompare(b.nazev, 'cs'));
+  const pocet = (t) => stav.recepty.filter(r => r.aktivni && (!t || r.typ === t)).length;
+  let h = `<div class="panel">
+    <div class="row" style="margin-bottom:12px">
+      <input id="recept-hledat" placeholder="Hledat podle názvu, štítku nebo suroviny…" value="${esc(stav.receptHledat)}" style="flex:1;min-width:200px">
+      <button class="btn small" id="recept-import" title="Vložit text receptu, např. zkopírovaný ze Samsung Notes">📋 Vložit z textu</button>
+      <button class="btn small primary" id="recept-novy">+ Nový recept</button>
+    </div>
+    <div class="filtry" style="margin-bottom:12px">
+      <button data-filtr="" class="${!f ? 'on' : ''}">Vše (${pocet('')})</button>
+      ${Object.entries(TYPY).map(([k, t]) => `<button data-filtr="${k}" class="${f === k ? 'on' : ''}">${t.ikona} ${t.nazev} (${pocet(k)})</button>`).join('')}
+      <button data-filtr="archiv" class="${f === 'archiv' ? 'on' : ''}">Archiv</button>
+    </div>
+    <div class="recepty">`;
+  for (const r of seznam) {
+    const nap = [...idx.naposledy.entries()].find(([id]) => id === r.id)?.[1];
+    h += `<div class="recept ${r.aktivni ? '' : 'archiv'}" data-recept="${r.id}">
+      <span class="n">${TYPY[r.typ].ikona} ${esc(r.nazev)}</span>
+      <span class="m">${[r.cas_min ? `⏱ ${r.cas_min} min` : '', (n => `${n} ${n === 1 ? 'surovina' : n >= 2 && n <= 4 ? 'suroviny' : 'surovin'}`)((idx.surRecept.get(r.id) || []).length), ...(r.stitky || [])].filter(Boolean).map(esc).join(' · ')}</span>
+      ${nap ? `<span class="m">naposledy ${fmtK(nap)}</span>` : ''}
+    </div>`;
+  }
+  if (!seznam.length) h += `<div class="nevari">Nic nenalezeno.</div>`;
+  app.innerHTML = h + '</div></div>';
+  const inp = document.getElementById('recept-hledat');
+  inp.addEventListener('input', () => { stav.receptHledat = inp.value; const p = inp.selectionStart; viewRecepty(); const n = document.getElementById('recept-hledat'); n.focus(); n.setSelectionRange(p, p); });
+}
+
+// ── Pomocníci UI ─────────────────────────────────────────
+function toast(t, chyba = false) {
+  const el = document.getElementById('toast');
+  el.textContent = t; el.className = 'on' + (chyba ? ' chyba' : '');
+  clearTimeout(toast.t); toast.t = setTimeout(() => el.className = '', chyba ? 5000 : 2200);
+}
+async function proved(fn, hlaska) {
+  try { await fn(); prekresli(); if (hlaska) toast(hlaska); }
+  catch (e) { console.error(e); toast('Nepodařilo se uložit: ' + (e.message || e), true); }
+}
+function potvrd(text) {
+  const d = document.getElementById('dlg-potvrd');
+  document.getElementById('potvrd-text').textContent = text;
+  d.showModal();
+  return new Promise(res => d.addEventListener('close', () => res(d.returnValue === 'ano'), { once: true }));
+}
+document.querySelectorAll('[data-zavrit]').forEach(b => b.addEventListener('click', () => b.closest('dialog').close()));
+const nahrad = (pole, novy, klic = 'id') => { const i = pole.findIndex(x => x[klic] === novy[klic]); if (i >= 0) pole[i] = novy; else pole.push(novy); };
+
+// ── Den: nastavení ──
+let denUprava = null;
+function otevriDen(s) {
+  denUprava = s;
+  const i = infoDne(s);
+  const f = document.getElementById('form-den');
+  document.getElementById('dlg-den-titul').textContent = `${DNY_PLNE[denTydne(s)]} ${fmtK(s)}`;
+  f.chod.options[0].textContent = `Automaticky (${CHODY[i.autoChod]})`;
+  f.chod.value = i.zaznam.chod || '';
+  f.porce.value = i.zaznam.porce || '';
+  f.porce.placeholder = `automaticky (${Math.max(1, (f.chod.value || i.autoChod) === 'obed' ? i.doma.length : i.tady.length)})`;
+  f.poznamka.value = i.poznamka;
+  document.getElementById('den-hint').innerHTML = `Podle Plánovače: ${OSOBY.map(o => `<b>${o.jmeno}</b> ${esc(i.st[o.key].duvod)}${i.st[o.key].pryc ? ' (pryč)' : ''}`).join(', ')}.<br>Oběd se vaří, když jsou přes den doma aspoň dva, jinak večeře. Když je doma jen jeden, nevaří se.`;
+  document.getElementById('dlg-den').showModal();
+}
+document.getElementById('form-den').addEventListener('submit', (e) => {
+  const f = e.target;
+  const patch = { chod: f.chod.value || null, porce: f.porce.value ? Number(f.porce.value) : null, poznamka: f.poznamka.value.trim() };
+  const s = denUprava;
+  proved(async () => nahrad(stav.dny, await api.ulozDen(s, patch), 'datum'), 'Uloženo');
+});
+
+// ── Návrh jídla ke dni ──
+let navrhDen = null, navrhFiltr = '';
+function otevriNavrh(s) {
+  navrhDen = s;
+  const i = infoDne(s);
+  document.getElementById('dlg-navrh-titul').textContent = `Navrhnout jídlo – ${DNY_PLNE[denTydne(s)]} ${fmtK(s)} (${CHODY[i.chod].toLowerCase()})`;
+  document.getElementById('navrh-hledat').value = '';
+  navrhFiltr = '';
+  vykresliNavrh();
+  document.getElementById('dlg-navrh').showModal();
+  document.getElementById('navrh-hledat').focus();
+}
+function vykresliNavrh() {
+  const q = norm(document.getElementById('navrh-hledat').value);
+  document.getElementById('navrh-filtry').innerHTML = [['', 'Vše'], ...Object.entries(TYPY).filter(([k]) => k !== 'objednavka').map(([k, t]) => [k, `${t.ikona} ${t.nazev}`])]
+    .map(([k, n]) => `<button type="button" data-nfiltr="${k}" class="${navrhFiltr === k ? 'on' : ''}">${n}</button>`).join('');
+  const uz = new Set((idx.kandDne.get(navrhDen) || []).map(k => k.recept_id));
+  const seznam = stav.recepty.filter(r => r.aktivni && r.typ !== 'objednavka' && (!navrhFiltr || r.typ === navrhFiltr) && (!q || norm(r.nazev).includes(q) || (r.stitky || []).some(t => norm(t).includes(q))))
+    .sort((a, b) => (idx.naposledy.get(a.id) || '').localeCompare(idx.naposledy.get(b.id) || '') || a.nazev.localeCompare(b.nazev, 'cs'));
+  document.getElementById('navrh-seznam').innerHTML = seznam.map(r => {
+    const nap = idx.naposledy.get(r.id);
+    return `<button type="button" data-pridej-kand="${r.id}" ${uz.has(r.id) ? 'disabled' : ''}>${TYPY[r.typ].ikona} ${esc(r.nazev)}<span class="poz">${uz.has(r.id) ? 'už navrženo' : nap ? 'naposledy ' + fmtK(nap) : 'ještě nebylo'}</span></button>`;
+  }).join('') || '<div class="nevari">Nic nenalezeno – přidej nový recept.</div>';
+}
+document.getElementById('navrh-hledat').addEventListener('input', vykresliNavrh);
+document.getElementById('dlg-navrh').addEventListener('click', (e) => {
+  const f = e.target.closest('[data-nfiltr]');
+  if (f) { navrhFiltr = f.dataset.nfiltr; vykresliNavrh(); return; }
+  const p = e.target.closest('[data-pridej-kand]');
+  if (p) {
+    const s = navrhDen;
+    document.getElementById('dlg-navrh').close();
+    proved(async () => stav.kandidati.push(...await api.pridejKandidaty([{ datum: s, recept_id: Number(p.dataset.pridejKand) }])), 'Návrh přidán');
+  }
+});
+document.getElementById('navrh-novy').addEventListener('click', () => {
+  const s = navrhDen;
+  document.getElementById('dlg-navrh').close();
+  otevriUpravu(null, {}, s);
+});
+
+// Automatický návrh: do dnů bez návrhu dá POCET_NAVRHU jídel. Ve všední večer jedno z nich rychlovka
+// nebo mražák, jinak vaření. Vynechá, co vyhrálo v posledních NEOPAKOVAT_DNI dnech a co už je v týdnu.
+async function autoNavrh() {
+  const dnyT = tydenDny(stav.tyden).filter(s => s >= DNES && !infoDne(s).objednavka && infoDne(s).chod !== 'nic' && !(idx.kandDne.get(s) || []).length);
+  const nedavno = (id, s) => { const n = idx.naposledy.get(id); return n && n >= plus(s, -NEOPAKOVAT_DNI); };
+  const vTydnu = new Set(tydenDny(stav.tyden).flatMap(s => (idx.kandDne.get(s) || []).map(k => k.recept_id)));
+  const zamichej = (a) => a.map(x => [Math.random(), x]).sort((p, q) => p[0] - q[0]).map(x => x[1]);
+  const rows = [];
+  for (const s of dnyT) {
+    const i = infoDne(s);
+    const dnes = new Set();
+    const vyber = (typy, n) => {
+      // nejdřív to, co jsme dlouho neměli; když nestačí, i nedávná jídla; při malém počtu receptů i opakování v týdnu
+      const vse = stav.recepty.filter(r => r.aktivni && typy.includes(r.typ) && !dnes.has(r.id));
+      const pool = vse.filter(r => !vTydnu.has(r.id));
+      const kand = [...zamichej(pool.filter(r => !nedavno(r.id, s))), ...zamichej(pool.filter(r => nedavno(r.id, s))), ...zamichej(vse.filter(r => vTydnu.has(r.id)))];
+      const vyber = kand.slice(0, n);
+      vyber.forEach(r => dnes.add(r.id));
+      return vyber;
+    };
+    const lehke = i.chod === 'vecere' && !jeVikend(s) ? vyber(['rychlovka', 'mrazak'], 1) : [];
+    const plne = vyber(['vareni'], POCET_NAVRHU - lehke.length);
+    for (const r of [...plne, ...lehke]) { vTydnu.add(r.id); rows.push({ datum: s, recept_id: r.id }); }
+  }
+  if (!rows.length) { toast('Není z čeho vybírat – přidej recepty.', true); return; }
+  await proved(async () => stav.kandidati.push(...await api.pridejKandidaty(rows)), `Přidáno ${rows.length} návrhů – teď hlasujte`);
+}
+
+// ── Recept: detail ──
+function otevriRecept(id, porce = null) {
+  const r = idx.recept.get(id);
+  const p = porce || r.porce;
+  const k = p / (r.porce || 1);
+  const sur = idx.surRecept.get(id) || [];
+  const el = document.getElementById('recept-obsah');
+  el.innerHTML = `<h3>${TYPY[r.typ].ikona} ${esc(r.nazev)}</h3>
+    <div class="small muted">${[TYPY[r.typ].nazev, r.cas_min ? `⏱ ${r.cas_min} min` : '', ...(r.stitky || [])].filter(Boolean).map(esc).join(' · ')}${r.pridal ? ` · přidal(a) ${esc(r.pridal)}` : ''}</div>
+    ${sur.length ? `<div><div class="row" style="margin-bottom:6px"><b class="small">Suroviny na</b>
+      <input type="number" id="recept-porce" min="1" max="20" value="${p}" style="width:64px"> <span class="small muted">${porceSlovo(p)} (recept je na ${r.porce})</span></div>
+      <div class="seznam-sur">${sur.map(s => `<div><span class="mn">${esc(fmtMn(s.mnozstvi == null ? null : s.mnozstvi * k, s.jednotka))}</span><span>${esc(s.nazev)}${idx.doma.has(norm(s.nazev)) ? ' <span class="muted small">🏠 doma</span>' : ''}</span></div>`).join('')}</div></div>` : ''}
+    ${r.postup ? `<div><b class="small">Postup</b><div class="postup">${esc(r.postup)}</div></div>` : ''}
+    ${r.odkaz ? `<a href="${esc(r.odkaz)}" target="_blank" rel="noopener" class="small">🔗 Původní recept</a>` : ''}
+    <div class="actions"><button type="button" class="btn" id="recept-upravit">✎ Upravit</button><span class="spacer"></span><button type="button" class="btn primary" data-zavrit>Zavřít</button></div>`;
+  el.querySelector('[data-zavrit]').addEventListener('click', () => document.getElementById('dlg-recept').close());
+  el.querySelector('#recept-upravit').addEventListener('click', () => { document.getElementById('dlg-recept').close(); otevriUpravu(id); });
+  el.querySelector('#recept-porce')?.addEventListener('change', (e) => otevriRecept(id, Math.max(1, Number(e.target.value) || r.porce)));
+  const d = document.getElementById('dlg-recept');
+  if (!d.open) d.showModal();
+}
+
+// ── Recept: úprava ──
+let upravaId = null, upravaProDen = null;
+function radekSuroviny(s = {}) {
+  const div = document.createElement('div');
+  div.className = 'sur-radek';
+  div.innerHTML = `<input name="s_nazev" placeholder="surovina" value="${esc(s.nazev || '')}">
+    <input name="s_mn" placeholder="množ." inputmode="decimal" value="${s.mnozstvi ?? ''}">
+    <input name="s_j" list="jednotky" placeholder="jedn." value="${esc(s.jednotka || '')}">
+    <select name="s_odd" class="odd">${Object.entries(ODDELENI).map(([k, n]) => `<option value="${k}" ${k === (s.oddeleni || odhadOddeleni(s.nazev)) ? 'selected' : ''}>${n}</option>`).join('')}</select>
+    <button type="button" class="btn small ghost" aria-label="Odebrat">×</button>`;
+  div.querySelector('button').addEventListener('click', () => div.remove());
+  const odd = div.querySelector('[name=s_odd]');
+  div.querySelector('[name=s_nazev]').addEventListener('change', (e) => { if (!s.oddeleni) odd.value = odhadOddeleni(e.target.value); });
+  document.getElementById('sur-radky').appendChild(div);
+}
+function otevriUpravu(id, predvyplnit = {}, proDen = null) {
+  upravaId = id; upravaProDen = proDen;
+  const r = id ? idx.recept.get(id) : { nazev: '', typ: 'vareni', porce: 3, cas_min: '', stitky: [], postup: '', odkaz: '', ...predvyplnit };
+  const f = document.getElementById('form-uprava');
+  document.getElementById('dlg-uprava-titul').textContent = id ? 'Upravit recept' : (proDen ? `Nový recept a návrh na ${fmtDen(proDen)}` : 'Nový recept');
+  f.nazev.value = r.nazev; f.typ.value = r.typ; f.porce.value = r.porce; f.cas_min.value = r.cas_min ?? '';
+  f.stitky.value = (r.stitky || []).join(', '); f.postup.value = r.postup || ''; f.odkaz.value = r.odkaz || '';
+  document.getElementById('sur-radky').innerHTML = '';
+  const sur = id ? (idx.surRecept.get(id) || []) : (predvyplnit.suroviny || []);
+  sur.forEach(radekSuroviny);
+  if (!sur.length) radekSuroviny();
+  const arch = document.getElementById('uprava-archiv');
+  arch.hidden = !id;
+  if (id) arch.textContent = r.aktivni ? 'Archivovat' : 'Obnovit z archivu';
+  document.getElementById('dlg-uprava').showModal();
+}
+document.getElementById('sur-pridat').addEventListener('click', () => radekSuroviny());
+document.getElementById('sur-text').addEventListener('click', () => {
+  const text = prompt('Vlož suroviny, každou na jeden řádek (např. „500 g kuřecí stehna“):');
+  if (!text) return;
+  // prázdné řádky ze začátku pryč
+  [...document.querySelectorAll('#sur-radky .sur-radek')].forEach(r => { if (!r.querySelector('[name=s_nazev]').value.trim()) r.remove(); });
+  text.split('\n').map(parsujSurovinu).filter(Boolean).forEach(radekSuroviny);
+});
+document.getElementById('uprava-archiv').addEventListener('click', () => {
+  const r = idx.recept.get(upravaId);
+  document.getElementById('dlg-uprava').close();
+  proved(async () => nahrad(stav.recepty, await api.archivujRecept(r.id, !r.aktivni)), r.aktivni ? 'Recept je v archivu' : 'Recept obnoven');
+});
+document.getElementById('form-uprava').addEventListener('submit', (e) => {
+  const f = e.target;
+  const recept = {
+    ...(upravaId ? { id: upravaId } : {}),
+    nazev: f.nazev.value.trim(), typ: f.typ.value, porce: Number(f.porce.value) || 3,
+    cas_min: f.cas_min.value === '' ? null : Number(f.cas_min.value),
+    stitky: f.stitky.value.split(',').map(t => t.trim()).filter(Boolean),
+    postup: f.postup.value.trim(), odkaz: f.odkaz.value.trim(),
+  };
+  const sur = [...document.querySelectorAll('#sur-radky .sur-radek')].map(r => ({
+    nazev: r.querySelector('[name=s_nazev]').value.trim(),
+    mnozstvi: (v => v === '' || isNaN(v) ? null : Number(v))(r.querySelector('[name=s_mn]').value.replace(',', '.').trim()),
+    jednotka: r.querySelector('[name=s_j]').value.trim(),
+    oddeleni: r.querySelector('[name=s_odd]').value,
+  })).filter(s => s.nazev);
+  const proDen = upravaProDen;
+  proved(async () => {
+    const { recept: r, suroviny } = await api.ulozRecept(recept, sur);
+    nahrad(stav.recepty, r);
+    stav.suroviny = stav.suroviny.filter(s => s.recept_id !== r.id).concat(suroviny);
+    if (proDen) stav.kandidati.push(...await api.pridejKandidaty([{ datum: proDen, recept_id: r.id }]));
+  }, proDen ? 'Recept uložen a navržen' : 'Recept uložen');
+});
+
+// ── Import receptu z textu (Samsung Notes apod.) ──
+const ODHAD = [
+  ['maso', /kuř|kuro|hověz|vepř|mlet|slanin|šunk|krevet|losos|ryb|tuňák(?!.*konzerv)|steh|prsa|žebír|klobás|párk|krůt|kachn|jehněč|maso|filet|chicken|pork|beef|shrimp|fish/],
+  ['mlecne', /mlék|smetan|sýr|parmazán|mozzar|feta|eidam|čedar|jogurt|tvaroh|máslo|vejce|vajíč|lučin|mascarpone|majonéz|ricott|sádl/],
+  ['pecivo', /chléb|chleb|rohlík|bageta|toast|tortill|pita|houska|knedlík|strouhank|pečivo|bulk/],
+  ['mrazene', /mražen|mrazen/],
+  ['koreni', /sladk[áé] paprik|uzen[áé] paprik|sůl|pepř|koření|paprika mlet|kmín|oregano|bazalk(a)? sušen|bujón|bujon|omáčk|ocet|hořčic|kečup|kari|curry|skořic|muškát|chilli vločk|sójov|rybí omáčk|pasta kari|mix/],
+  ['trvanlive', /rýže|těstovin|špaget|nudle|mouk|cukr|olej|konzerv|plechov|čočk|fazole (v|z) |cizrn|kokosov|rajčata krájen|krájená rajčata|protlak|ovesn|kuskus|bulgur|olivy|brusink|med|tuňák/],
+  ['napoje', /víno|pivo|džus|voda|limonád/],
+  ['zelenina', /cibul|česnek|mrkev|mrkv|brambor|rajč|okurk|paprik|cuket|lil[e]?k|salát|špenát|zelí|kapust|brokolic|květák|celer|petržel|pórek|houb|žampion|zázvor|citron|limet|jablk|banán|avokád|pažitk|kopr|bazalk|koriandr|rozmar|tymián|ředkev|dýně|kukuřic|hrášek|fazolk|pak choi|kangkong|chilli|ovoce|zelenin/],
+];
+const odhadOddeleni = (nazev) => { const n = String(nazev || '').toLowerCase(); return ODHAD.find(([, re]) => re.test(n))?.[0] || 'ostatni'; };
+// „500 g kuřecí stehna“, „- 2 mrkve“, „kuřecí stehna 500 g“, „1/2 lžičky soli“, „sůl“
+function parsujSurovinu(radek) {
+  let t = radek.replace(/^[\s\-–•*·▪◦✓☐☑\d]+[.)]\s+/, (m) => /\d/.test(m) && !/[.)]\s/.test(m) ? m : '').replace(/^[\s\-–•*·▪◦✓☐☑]+/, '').trim();
+  if (!t) return null;
+  const cislo = '(\\d+(?:[.,]\\d+)?(?:\\s*\\/\\s*\\d+)?|½|¼|¾)';
+  const jedn = '(kg|g|dkg|dag|ml|dl|l|ks|kusy?|kusů|lžíce|lžic[ei]?|lžička|lžičk[yau]|lžiček|PL|ČL|stroužk[yůu]|stroužek|svazek|svazk[yůu]|balení|plechovk[ayu]|sklenic[eiu]?|sáček|sáčk[yůu]|hrst|špetk[ayu]|hlavičk[ayu]|kus)\\.?';
+  const prevod = (x) => { x = x.replace(',', '.').replace('½', '0.5').replace('¼', '0.25').replace('¾', '0.75'); if (x.includes('/')) { const [a, b] = x.split('/').map(Number); return a / b; } return Number(x); };
+  const sjednot = (j) => {
+    j = (j || '').toLowerCase().replace('.', '');
+    if (/^lžič|^čl$/.test(j)) return 'lžička';
+    if (/^lžíc|^lžic|^pl$/.test(j)) return 'lžíce';
+    if (/^strou/.test(j)) return 'stroužek';
+    if (/^svaz/.test(j)) return 'svazek';
+    if (/^plech/.test(j)) return 'plechovka';
+    if (/^sklen/.test(j)) return 'sklenice';
+    if (/^sáč/.test(j)) return 'sáček';
+    if (/^špet/.test(j)) return 'špetka';
+    if (/^hlav/.test(j)) return 'hlavička';
+    if (/^kus|^ks/.test(j)) return 'ks';
+    return j;
+  };
+  let m = t.match(new RegExp(`^${cislo}\\s*(?:${jedn}\\s+)?(.+)$`, 'i'));
+  let mn = null, j = '', nazev = t;
+  if (m) { mn = prevod(m[1]); j = sjednot(m[2]); nazev = m[3]; }
+  else if ((m = t.match(new RegExp(`^(.+?)[\\s,:–-]+${cislo}\\s*${jedn}?$`, 'i')))) { nazev = m[1]; mn = prevod(m[2]); j = sjednot(m[3]); }
+  if (j === 'dkg' || j === 'dag') { mn *= 10; j = 'g'; }
+  if (j === 'dl') { mn *= 100; j = 'ml'; }
+  if (mn != null && !j) j = 'ks';
+  nazev = nazev.replace(/^(z|ze)\s+/i, '').replace(/[.;]$/, '').trim();
+  return { nazev, mnozstvi: mn != null && !isNaN(mn) ? Math.round(mn * 100) / 100 : null, jednotka: j, oddeleni: odhadOddeleni(nazev) };
+}
+function parsujRecept(text) {
+  const radky = text.replace(/\r/g, '').split('\n').map(r => r.trim());
+  while (radky.length && !radky[0]) radky.shift();
+  const nazev = (radky.shift() || 'Nový recept').replace(/^#+\s*/, '');
+  const jeHlavickaSur = (r) => /^(suroviny|ingredience|potřebujeme|nákup)\s*:?\s*$/i.test(r);
+  const jeHlavickaPost = (r) => /^(postup|příprava|návod|jak na to)\s*:?\s*$/i.test(r);
+  const vypadaJakoSurovina = (r) => /^[\-–•*·▪◦✓☐☑]/.test(r) || /^(\d+([.,]\d+)?|½|¼|¾)\s*(kg|g|dkg|dag|ml|dl|l|ks|lž|PL|ČL|strou|svaz|balen|plech|sklen|sáč|hrst|špet|hlav)?\b/i.test(r) && r.length < 70;
+  const sur = [], post = [];
+  let rezim = null, porce = null, cas = null;
+  for (const r of radky) {
+    if (!r) { if (rezim === 'post') post.push(''); continue; }
+    const mp = r.match(/(\d+)\s*(porc[eíi]|osob|lid)/i); if (mp && r.length < 40 && !porce) { porce = Number(mp[1]); continue; }
+    const mc = r.match(/(\d+)\s*(min|minut)/i); if (mc && r.length < 30 && !cas) { cas = Number(mc[1]); continue; }
+    if (jeHlavickaSur(r)) { rezim = 'sur'; continue; }
+    if (jeHlavickaPost(r)) { rezim = 'post'; continue; }
+    if (rezim === 'sur' || (rezim === null && vypadaJakoSurovina(r))) {
+      if (rezim === null && !vypadaJakoSurovina(r) && r.length > 60) { rezim = 'post'; post.push(r); continue; }
+      const p = parsujSurovinu(r); if (p) sur.push(p);
+      if (rezim === null) rezim = 'sur?';
+      continue;
+    }
+    if (rezim === 'sur?' && vypadaJakoSurovina(r)) { const p = parsujSurovinu(r); if (p) sur.push(p); continue; }
+    rezim = 'post'; post.push(r.replace(/^\d+[.)]\s*/, (m) => m));
+  }
+  const postup = post.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  const n = norm(nazev + ' ' + postup);
+  const typ = /mražák|mrazak|rozmraz/.test(n) ? 'mrazak' : /pomazank|chlebicek|toast|salat|sandwich/.test(n) && sur.length < 8 ? 'rychlovka' : 'vareni';
+  return { nazev, typ, porce: porce || 3, cas_min: cas ?? '', stitky: [], postup, odkaz: (text.match(/https?:\/\/\S+/) || [''])[0], suroviny: sur };
+}
+document.getElementById('form-import').addEventListener('submit', (e) => {
+  const text = e.target.text.value;
+  if (!text.trim()) return;
+  e.target.text.value = '';
+  otevriUpravu(null, parsujRecept(text));
+});
+
+// ── Události ─────────────────────────────────────────────
+document.getElementById('tabs').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-view]'); if (!b) return;
+  stav.view = b.dataset.view;
+  try { localStorage.setItem('jidelnicek-view', stav.view); } catch (_) {}
+  prekresli();
+  window.scrollTo(0, 0);
+});
+
+app.addEventListener('click', async (e) => {
+  const t = e.target.closest('button, [data-recept], [data-skok], a');
+  if (!t) return;
+  const d = t.dataset;
+  if (d.tyden) { stav.tyden = plus(stav.tyden, Number(d.tyden)); return prekresli(); }
+  if (d.tydenNa) { stav.tyden = d.tydenNa; return prekresli(); }
+  if (d.skok) {
+    e.preventDefault();
+    stav.view = 'tyden'; stav.tyden = pondeli(d.skok); prekresli();
+    document.getElementById('den-' + d.skok)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  if (d.recept) { e.preventDefault(); return otevriRecept(Number(d.recept), d.porce ? Number(d.porce) : null); }
+  if (d.den) return otevriDen(d.den);
+  if (d.navrh) return otevriNavrh(d.navrh);
+  if (t.id === 'auto-navrh') return autoNavrh();
+  if (d.hlas) {
+    const k = stav.kandidati.find(x => x.id === Number(d.hlas));
+    const n = Number(d.n);
+    if (mujHlas(k) === n) return proved(async () => { await api.zrusHlas(k.id); stav.hlasy = stav.hlasy.filter(h => !(h.kandidat_id === k.id && osobaZeJmena(h.kdo) === stav.ja.key)); });
+    return proved(async () => {
+      const h = await api.hlasuj(k.id, n);
+      stav.hlasy = stav.hlasy.filter(x => !(x.kandidat_id === k.id && osobaZeJmena(x.kdo) === stav.ja.key)).concat(h);
+    });
+  }
+  if (d.vybrat !== undefined && t.dataset.k !== undefined) {
+    const s = d.vybrat;
+    return proved(async () => nahrad(stav.dny, await api.ulozDen(s, { vybrany_kandidat_id: d.k ? Number(d.k) : null }), 'datum'), d.k ? 'Vybráno' : 'Rozhodne hlasování');
+  }
+  if (d.objednat) {
+    const s = d.objednat, ano = d.hodnota === '1';
+    return proved(async () => nahrad(stav.dny, await api.ulozDen(s, { objednavka: ano }), 'datum'), ano ? '🛵 Objednáváme – z nákupu je to pryč' : 'Vaří se podle hlasování');
+  }
+  if (d.smazKand) {
+    const k = stav.kandidati.find(x => x.id === Number(d.smazKand));
+    if (!await potvrd(`Odebrat návrh „${idx.recept.get(k.recept_id).nazev}“?`)) return;
+    return proved(async () => { await api.smazKandidata(k.id); stav.kandidati = stav.kandidati.filter(x => x.id !== k.id); stav.hlasy = stav.hlasy.filter(h => h.kandidat_id !== k.id); }, 'Návrh odebrán');
+  }
+  if (d.rezim) { stav.nakupRezim = d.rezim; return prekresli(); }
+  if (d.nakupDen) { stav.nakupDen = plus(stav.nakupDen, Number(d.nakupDen)); return prekresli(); }
+  if (d.nakupDnes !== undefined) { stav.nakupDen = DNES; return prekresli(); }
+  if (d.smazNakup) return proved(async () => { await api.smazNakup(Number(d.smazNakup)); stav.nakup = stav.nakup.filter(n => n.id !== Number(d.smazNakup)); });
+  if (d.smazDoma) return proved(async () => { await api.smazDoma(Number(d.smazDoma)); stav.doma = stav.doma.filter(n => n.id !== Number(d.smazDoma)); });
+  if (d.filtr !== undefined) { stav.receptFiltr = d.filtr; return prekresli(); }
+  if (t.id === 'recept-novy') return otevriUpravu(null);
+  if (t.id === 'recept-import') return document.getElementById('dlg-import').showModal();
+});
+
+app.addEventListener('change', (e) => {
+  const t = e.target;
+  if (t.dataset.odskrtni) {
+    const den = stav.nakupDen, klic = t.dataset.odskrtni, text = t.dataset.text, koupeno = t.checked;
+    return proved(async () => {
+      const r = await api.odskrtni(den, klic, text, koupeno);
+      stav.nakup = stav.nakup.filter(n => !(n.datum === den && n.klic === klic)).concat(r);
+    });
+  }
+  if (t.dataset.rucni) {
+    const id = Number(t.dataset.rucni);
+    return proved(async () => nahrad(stav.nakup, await api.upravNakup(id, { koupeno: t.checked })));
+  }
+});
+
+app.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const f = e.target;
+  if (f.id === 'form-navic') {
+    const text = f.text.value.trim(), den = stav.nakupDen;
+    if (text) proved(async () => stav.nakup.push(await api.pridejNakup(den, text)));
+  }
+  if (f.id === 'form-doma') {
+    const nazev = f.nazev.value.trim().toLowerCase();
+    if (nazev && !stav.doma.some(d => norm(d.nazev) === norm(nazev))) proved(async () => stav.doma.push(await api.pridejDoma(nazev)));
+  }
+});
+
+// ── Načtení ──────────────────────────────────────────────
+document.body.insertAdjacentHTML('beforeend', `<datalist id="jednotky">${JEDNOTKY.map(j => `<option value="${j}">`).join('')}</datalist>`);
+async function nacti(s) {
+  try {
+    Object.assign(stav, await api.nacti());
+    const jmenoCele = s?.jmeno || '';
+    const key = osobaZeJmena(jmenoCele);
+    stav.ja = key ? { key, jmeno: OSOBA[key].jmeno, jmenoCele } : null;
+    document.getElementById('header-meta').textContent = stav.ja ? `Přihlášen(a): ${stav.ja.jmeno}` : `Přihlášen(a): ${jmenoCele} – hlasují jen Jana, Lukáš a Jakub`;
+    try { const v = localStorage.getItem('jidelnicek-view'); if (v && document.querySelector(`#tabs [data-view="${v}"]`)) stav.view = v; } catch (_) {}
+    prekresli();
+  } catch (e) {
+    console.error(e);
+    app.innerHTML = `<div class="panel"><h2>Data se nepodařilo načíst</h2><div class="sub">${esc(e.message || e)}</div></div>`;
+  }
+}
+
+if (DEMO) {
+  document.documentElement.classList.remove('auth-ceka');
+  document.getElementById('demo-banner').hidden = false;
+  document.title = 'Ukázka — Jídelníček';
+  const kdo = new URLSearchParams(location.search).get('jako') || 'Jakub';
+  nacti({ jmeno: kdo });
+} else {
+  RodinaAuth.vyzadujPrihlaseni().then((s) => { if (s) nacti(s); });
+}
+</script>
+</body>
+</html>
