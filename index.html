@@ -798,7 +798,11 @@ function seznamNakupu(den, polozky, doma, odskrtavat) {
   const sectene = sectiPolozky(polozky);
   const zaznam = (klic) => stav.nakup.find(n => n.datum === den && n.klic === klic);
   // ruční položky: z tohoto dne + nekoupené z dřívějších dnů (nepropadají)
-  const rucni = odskrtavat ? stav.nakup.filter(n => n.klic == null && (n.datum === den || (!n.koupeno && n.datum < den))) : [];
+  // v pohledu „Na 7 dní“ (den = null) jsou všechny nekoupené ruční položky + dnes koupené
+  const ref = den ?? DNES;
+  const rucni = odskrtavat
+    ? stav.nakup.filter(n => n.klic == null && (n.datum === den || (!n.koupeno && n.datum < den)))
+    : stav.nakup.filter(n => n.klic == null && (!n.koupeno || n.datum >= DNES));
   let h = '';
   if (!sectene.length && !rucni.length) h += `<div class="nevari">${odskrtavat ? 'Na zítřek není z receptu potřeba nic koupit.' : 'Zatím nic.'}</div>`;
   const skupiny = {};
@@ -816,9 +820,9 @@ function seznamNakupu(den, polozky, doma, odskrtavat) {
     }
     h += `</div>`;
   }
-  if (odskrtavat) {
+  {
     h += `<div class="oddeleni"><h3>✍️ Navíc</h3>`;
-    for (const n of rucni) h += `<label class="polozka ${n.koupeno ? 'koupeno' : ''}"><input type="checkbox" data-rucni="${n.id}" ${n.koupeno ? 'checked' : ''}><span class="t">${esc(n.text)}</span>${n.datum < den ? `<span class="k">z ${esc(fmtDen(n.datum))}</span>` : ''}<button type="button" class="btn small ghost" data-smaz-nakup="${n.id}" aria-label="Smazat">🗑</button></label>`;
+    for (const n of rucni) h += `<label class="polozka ${n.koupeno ? 'koupeno' : ''}"><input type="checkbox" data-rucni="${n.id}" ${n.koupeno ? 'checked' : ''}><span class="t">${esc(n.text)}</span>${n.datum < ref ? `<span class="k">z ${esc(fmtDen(n.datum))}</span>` : ''}<button type="button" class="btn small ghost" data-smaz-nakup="${n.id}" aria-label="Smazat">🗑</button></label>`;
     h += `<form class="row" id="form-navic" style="margin-top:8px"><input name="text" placeholder="Přidat položku (mléko, ovoce na svačiny…)" required style="flex:1"><button class="btn small">Přidat</button></form></div>`;
   }
   if (doma.length) {
@@ -1222,7 +1226,7 @@ app.addEventListener('submit', (e) => {
   e.preventDefault();
   const f = e.target;
   if (f.id === 'form-navic') {
-    const text = f.text.value.trim(), den = stav.nakupDen;
+    const text = f.text.value.trim(), den = stav.nakupRezim === 'tyden' ? DNES : stav.nakupDen;
     if (text) proved(async () => stav.nakup.push(await api.pridejNakup(den, text)));
   }
   if (f.id === 'form-doma') {
@@ -1262,7 +1266,19 @@ if (DEMO) {
   const kdo = new URLSearchParams(location.search).get('jako') || 'Jakub';
   nacti({ jmeno: kdo });
 } else {
-  RodinaAuth.vyzadujPrihlaseni().then((s) => { if (s) nacti(s); });
+  // přihlášení může část za # zahodit, proto si ji na chvíli pamatujeme
+  try {
+    if (location.hash.length > 1) localStorage.setItem('jidelnicek-odkaz', JSON.stringify({ h: location.hash, t: Date.now() }));
+    else {
+      const o = JSON.parse(localStorage.getItem('jidelnicek-odkaz') || 'null');
+      if (o && Date.now() - o.t < 30 * 60 * 1000) history.replaceState(null, '', o.h);
+      localStorage.removeItem('jidelnicek-odkaz');
+    }
+  } catch (_) {}
+  RodinaAuth.vyzadujPrihlaseni().then((s) => {
+    try { localStorage.removeItem('jidelnicek-odkaz'); } catch (_) {}
+    if (s) nacti(s);
+  });
 }
 </script>
 </body>
