@@ -1146,6 +1146,7 @@ document.getElementById('tabs').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-view]'); if (!b) return;
   stav.view = b.dataset.view;
   try { localStorage.setItem('jidelnicek-view', stav.view); } catch (_) {}
+  try { history.replaceState(null, '', '#' + stav.view); } catch (_) {} // adresa v prohlížeči jde rovnou sdílet
   prekresli();
   window.scrollTo(0, 0);
 });
@@ -1235,7 +1236,10 @@ async function nacti(s) {
     const key = osobaZeJmena(jmenoCele);
     stav.ja = key ? { key, jmeno: OSOBA[key].jmeno, jmenoCele } : null;
     document.getElementById('header-meta').textContent = stav.ja ? `Přihlášen(a): ${stav.ja.jmeno}` : `Přihlášen(a): ${jmenoCele} – hlasují jen Jana, Lukáš a Jakub`;
-    try { const v = localStorage.getItem('jidelnicek-view'); if (v && document.querySelector(`#tabs [data-view="${v}"]`)) stav.view = v; } catch (_) {}
+    // odkaz s #nakup (nebo #tyden, #mesic, #recepty) otevře rovnou danou záložku, má přednost před posledně otevřenou
+    const zOdkazu = location.hash.slice(1);
+    if (zOdkazu && document.querySelector(`#tabs [data-view="${zOdkazu}"]`)) stav.view = zOdkazu;
+    else try { const v = localStorage.getItem('jidelnicek-view'); if (v && document.querySelector(`#tabs [data-view="${v}"]`)) stav.view = v; } catch (_) {}
     prekresli();
   } catch (e) {
     console.error(e);
