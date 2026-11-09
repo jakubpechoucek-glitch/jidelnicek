@@ -435,7 +435,7 @@ const api = DEMO ? (() => {
         db().from('jid_kandidati').select('*').gte('datum', OD).order('id'),
         db().from('jid_hlasy').select('kandidat_id, kdo, hodnoceni, jid_kandidati!inner(datum)').gte('jid_kandidati.datum', OD),
         db().from('jid_dny').select('*').gte('datum', OD),
-        db().from('jid_nakup').select('*').gte('datum', plus(DNES, -7)).order('id'),
+        db().from('jid_nakup').select('*').or(`datum.gte.${plus(DNES, -7)},and(klic.is.null,koupeno.eq.false)`).order('id'),
         db().from('jid_doma').select('*').order('nazev'),
       ]);
       // Plánovač (kdo je kdy doma) – když se nepodaří načíst, platí jen víkendy
@@ -797,7 +797,8 @@ function viewNakup() {
 function seznamNakupu(den, polozky, doma, odskrtavat) {
   const sectene = sectiPolozky(polozky);
   const zaznam = (klic) => stav.nakup.find(n => n.datum === den && n.klic === klic);
-  const rucni = odskrtavat ? stav.nakup.filter(n => n.datum === den && n.klic == null) : [];
+  // ruční položky: z tohoto dne + nekoupené z dřívějších dnů (nepropadají)
+  const rucni = odskrtavat ? stav.nakup.filter(n => n.klic == null && (n.datum === den || (!n.koupeno && n.datum < den))) : [];
   let h = '';
   if (!sectene.length && !rucni.length) h += `<div class="nevari">${odskrtavat ? 'Na zítřek není z receptu potřeba nic koupit.' : 'Zatím nic.'}</div>`;
   const skupiny = {};
@@ -817,7 +818,7 @@ function seznamNakupu(den, polozky, doma, odskrtavat) {
   }
   if (odskrtavat) {
     h += `<div class="oddeleni"><h3>✍️ Navíc</h3>`;
-    for (const n of rucni) h += `<label class="polozka ${n.koupeno ? 'koupeno' : ''}"><input type="checkbox" data-rucni="${n.id}" ${n.koupeno ? 'checked' : ''}><span class="t">${esc(n.text)}</span><button type="button" class="btn small ghost" data-smaz-nakup="${n.id}" aria-label="Smazat">🗑</button></label>`;
+    for (const n of rucni) h += `<label class="polozka ${n.koupeno ? 'koupeno' : ''}"><input type="checkbox" data-rucni="${n.id}" ${n.koupeno ? 'checked' : ''}><span class="t">${esc(n.text)}</span>${n.datum < den ? `<span class="k">z ${esc(fmtDen(n.datum))}</span>` : ''}<button type="button" class="btn small ghost" data-smaz-nakup="${n.id}" aria-label="Smazat">🗑</button></label>`;
     h += `<form class="row" id="form-navic" style="margin-top:8px"><input name="text" placeholder="Přidat položku (mléko, ovoce na svačiny…)" required style="flex:1"><button class="btn small">Přidat</button></form></div>`;
   }
   if (doma.length) {
