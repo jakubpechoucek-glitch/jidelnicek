@@ -486,7 +486,7 @@ const api = DEMO ? (() => {
 // ── Stav ─────────────────────────────────────────────────
 const stav = {
   recepty: [], suroviny: [], kandidati: [], hlasy: [], dny: [], nakup: [], doma: [], plan: { volno: [], svatky: [], nastaveni: {} },
-  ja: null, view: 'tyden', tyden: plus(pondeli(DNES), 7), nakupDen: DNES, nakupRezim: 'zitra', receptFiltr: '', receptHledat: '',
+  ja: null, view: 'tyden', tyden: pondeli(DNES), nakupDen: DNES, nakupRezim: 'zitra', receptFiltr: '', receptHledat: '',
 };
 let idx = null;
 
