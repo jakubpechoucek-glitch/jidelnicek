@@ -1142,10 +1142,15 @@ document.getElementById('form-import').addEventListener('submit', (e) => {
 });
 
 // ── Události ─────────────────────────────────────────────
+// adresa v prohlížeči odpovídá záložce (a režimu nákupu), takže ji jde rovnou sdílet
+function odkazDoAdresy() {
+  try { history.replaceState(null, '', '#' + stav.view + (stav.view === 'nakup' ? '/' + stav.nakupRezim : '')); } catch (_) {}
+}
 document.getElementById('tabs').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-view]'); if (!b) return;
   stav.view = b.dataset.view;
   try { localStorage.setItem('jidelnicek-view', stav.view); } catch (_) {}
+  odkazDoAdresy();
   prekresli();
   window.scrollTo(0, 0);
 });
@@ -1188,7 +1193,7 @@ app.addEventListener('click', async (e) => {
     if (!await potvrd(`Odebrat návrh „${idx.recept.get(k.recept_id).nazev}“?`)) return;
     return proved(async () => { await api.smazKandidata(k.id); stav.kandidati = stav.kandidati.filter(x => x.id !== k.id); stav.hlasy = stav.hlasy.filter(h => h.kandidat_id !== k.id); }, 'Návrh odebrán');
   }
-  if (d.rezim) { stav.nakupRezim = d.rezim; return prekresli(); }
+  if (d.rezim) { stav.nakupRezim = d.rezim; odkazDoAdresy(); return prekresli(); }
   if (d.nakupDen) { stav.nakupDen = plus(stav.nakupDen, Number(d.nakupDen)); return prekresli(); }
   if (d.nakupDnes !== undefined) { stav.nakupDen = DNES; return prekresli(); }
   if (d.smazNakup) return proved(async () => { await api.smazNakup(Number(d.smazNakup)); stav.nakup = stav.nakup.filter(n => n.id !== Number(d.smazNakup)); });
@@ -1235,7 +1240,14 @@ async function nacti(s) {
     const key = osobaZeJmena(jmenoCele);
     stav.ja = key ? { key, jmeno: OSOBA[key].jmeno, jmenoCele } : null;
     document.getElementById('header-meta').textContent = stav.ja ? `Přihlášen(a): ${stav.ja.jmeno}` : `Přihlášen(a): ${jmenoCele} – hlasují jen Jana, Lukáš a Jakub`;
-    try { const v = localStorage.getItem('jidelnicek-view'); if (v && document.querySelector(`#tabs [data-view="${v}"]`)) stav.view = v; } catch (_) {}
+    // odkaz s #nakup (nebo #tyden, #mesic, #recepty) otevře rovnou danou záložku, má přednost před posledně otevřenou
+    // #nakup/tyden = Nákup v režimu „Na 7 dní“, #nakup/zitra = „Na zítra“
+    const [zOdkazu, rezimOdkazu] = location.hash.slice(1).split('/');
+    if (zOdkazu && document.querySelector(`#tabs [data-view="${zOdkazu}"]`)) {
+      stav.view = zOdkazu;
+      if (zOdkazu === 'nakup' && (rezimOdkazu === 'tyden' || rezimOdkazu === 'zitra')) stav.nakupRezim = rezimOdkazu;
+    }
+    else try { const v = localStorage.getItem('jidelnicek-view'); if (v && document.querySelector(`#tabs [data-view="${v}"]`)) stav.view = v; } catch (_) {}
     prekresli();
   } catch (e) {
     console.error(e);
